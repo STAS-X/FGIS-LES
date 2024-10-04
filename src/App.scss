@@ -1,0 +1,42 @@
+/* Import all of Bootstrap's CSS */
+@import '~bootstrap/scss/bootstrap';
+
+h1,
+h2 {
+	text-align: center;
+}
+
+main {
+	display: flex;
+	justify-content: center;
+	margin-top: 50px;
+}
+.l-todo {
+	max-width: 31.25rem;
+}
+form {
+	margin-bottom: 1rem;
+}
+form input[type='submit'] {
+	margin-left: 0.5rem;
+}
+.task-group {
+	margin-bottom: 0.125rem;
+	display: flex;
+	flex-wrap: nowrap;
+	justify-content: space-between;
+}
+.task-group button {
+	padding: 0.25rem 0.5rem;
+	margin-left: 0.5rem;
+	border: none;
+}
+
+img.logo:hover {
+	opacity: 0.5;
+	transition: all 0.5s;
+}
+
+input.form-check-input {
+	transform: scale(1.3);
+}
