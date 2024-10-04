@@ -51,12 +51,12 @@ const searchStep = {
 
 const featureType = {
 	main: 'MAIN_FEATURE',
-	sub: 'SUB_FEATURE',
-	summary: 'HEADER',
+	detailed: 'DETAILED_FEATURE',
+	summary: 'SUMMARY',
 	header: 'HEADER',
 };
 
-const compositionDetailInfo = {
+const compositionInfo = {
 	forestItem: [
 		'единичные деревья',
 		'лесные культуры',
@@ -85,44 +85,44 @@ const compositionDetailInfo = {
 	],
 };
 
-const additionalLotInfo = [
-	{ name: '', value: 'подлесок:' },
-	{ name: '', value: 'подрост:' },
+const compositionDetailedDescription = [
+	{ name: 'underGrowth', value: 'подлесок:' },
+	{ name: 'growth', value: 'подрост:' },
 	{
-		name: '',
+		name: 'selectionValue',
 		value: 'селекционная оценка:',
 	},
 	{
-		name: '',
+		name: 'ozu',
 		value: 'озу:',
 	},
 	{
-		name: '',
+		name: 'cultures',
 		value: 'культуры-',
 	},
 	{
-		name: '',
+		name: 'cultures2',
 		value: 'культуры ',
 	},
 	{
-		name: '',
+		name: 'damage',
 		value: 'повреждение',
 	},
-	{ name: '', value: 'СОСТАВ' },
-	{ name: '', value: 'ПОЛHОТА' },
-	{ name: '', value: 'РЕКОМЕНД.К' },
-	{ name: '', value: 'HАСАЖДЕHИЕ' },
-	{ name: '', value: 'ВЫСОТА' },
-	{ name: '', value: 'БОHИТЕТ' },
-	{ name: '', value: 'ТЛУ' },
+	{ name: 'maket1', value: 'СОСТАВ' },
+	{ name: 'maket2', value: 'ПОЛHОТА' },
+	{ name: 'maket3', value: 'РЕКОМЕНД.К' },
+	{ name: 'maket4', value: 'HАСАЖДЕHИЕ' },
+	{ name: 'maket5', value: 'ВЫСОТА' },
+	{ name: 'maket6', value: 'БОHИТЕТ' },
+	{ name: 'maket7', value: 'ТЛУ' },
 ];
 
 const tryParseForestryData = (data) => {
 	let hasTitle = (hasHeader = false);
 	let currentKvartal = null;
 	let currentLot = null;
-	let currentFeature = null;
-	let currentSubFeature = null;
+	let currentComposition = null;
+	let currentDetailed = null;
 	let currentProtectZone = null;
 
 	let currentStep = searchStep.stepTitle;
@@ -150,7 +150,6 @@ const tryParseForestryData = (data) => {
 		lotProtectZone: '',
 		lotTier: {},
 		compositionContent: {},
-		additionInfo: [],
 	};
 
 	let compositionDescription = {
@@ -169,6 +168,7 @@ const tryParseForestryData = (data) => {
 		composeLotCommonStock: 0,
 		composeLotCommonClutterStock: 0,
 		composeLotClutterStock: 0,
+		additionDetailed: [],
 	};
 
 	// Функция форматирования чисел с плавающей запятой по количеству целой и дробной частей
@@ -256,20 +256,77 @@ const tryParseForestryData = (data) => {
 		}
 	};
 
+	// Функция по проверке соответствия кандидата в текущее насаждение принадлежности классификатору compositionInfo - { forestItem -  вид древесины; objectItem -  элемент леса, не относящийся к деревьям}
+	const isFeatureMainComposition = (textItem) => {
+		const kandidate = getColumnHeaderValue(textItem, [2 - 23], '', true).trim();
+		let isForest = (isObject = false);
+		let lotCompositionName = '';
+
+		if (
+			compositionInfo.forestItem.findIndex((item) => {
+				if (kandidate.search(item) == 0 > -1) lotCompositionName = item;
+				return kandidate.search(item) == 0 > -1;
+			})
+		) {
+			isForest = true;
+			if (
+				compositionInfo.objectItem.findIndex((item) => {
+					if (kandidate.search(item) == 0 > -1) lotCompositionName = item;
+					return kandidate.search(item) == 0 > -1;
+				})
+			) {
+				isObject = true;
+			}
+		} else {
+			if (
+				compositionInfo.objectItem.findIndex((item) => {
+					if (kandidate.search(item) == 0 > -1) lotCompositionName = item;
+					return kandidate.search(item) == 0;
+				}) > -1
+			) {
+				isObject = true;
+			}
+		}
+
+		return { isForest, isObject, lotCompositionName };
+	};
+
+	// Функция по проверке соответствия кандидата в дополнительное описание к насаждению
+	const isFeatureDetailedDescription = (textItem) => {
+		const kandidate = getColumnHeaderValue(textItem, [2 - 23], '', true).trim();
+		let isDetailed = false;
+		let nameDetailed = '';
+
+		if (
+			compositionDetailedDescription.findIndex((item) => {
+				if (kandidate.search(item.value) == 0) nameDetailed = item.name;
+				return kandidate.search(item.value) == 0 > -1;
+			})
+		) {
+			isDetailed = true;
+		}
+		return { isDetailed, nameDetailed };
+	};
+
 	// Функция для проверки соответствия текущей строки началу данных для различных элементов выдела и лесного квартала в целом
 	const checkForFeatureType = (textItem, fType) => {
 		switch (fType) {
 			case featureType.header:
-				return textItem.trim() && textItem.replace(/-/g, '').trim() === '';
+				return (!currentFeature || featureType.summary) && textItem.trim() && textItem.replace(/-/g, '').trim() === '';
 			case featureType.main:
-				return currentKvartal && Number(getColumnHeaderValue(textItem, [0], '')) > 0;
-			case featureType.sub:
+				return (
+					currentKvartal &&
+					(isFeatureMainComposition(textItem).isForest ||
+						isFeatureMainComposition(textItem).isObject ||
+						Number(getColumnHeaderValue(textItem, [0], '')) > 0)
+				);
+			case featureType.detailed:
 				return (
 					currentFeature === featureType.main &&
 					currentLot &&
 					currentKvartal &&
 					kvartalsForestCompose[currentKvartal]?.[currentLot]?.lotComposition &&
-					textItem.indexOf(':') > -1
+					isFeatureDetailedDescription(textItem).isDetailed
 				);
 			case featureType.summary:
 				return textItem.search(/Итого по категории/gi) > -1 || textItem.search(/Итого по кварталу/gi) > -1;
@@ -396,17 +453,22 @@ const tryParseForestryData = (data) => {
 							if (currentFeature !== featureType.main) currentFeature = featureType.main;
 							//console.log(getColumnHeaderValue(textItem, [0, 1, 2, 3, '4-7']), 'Get columns');
 						} //Проверяем наличие дополнительной части выделам
-						else if (checkForFeatureType(textItem, featureType.sub)) {
-							if (getColumnHeaderValue(textItem, [0], '') === '') {
-								if (currentFeature !== featureType.sub) currentFeature = featureType.sub;
-							} else {
-								console.log(
-									`Ошибка парсинга выдела ${getColumnHeaderValue(textItem, [0], '')} в квартале ${currentKvartal}`
-								);
-							}
+						else if (checkForFeatureType(textItem, featureType.detailed)) {
+							if (currentFeature !== featureType.sub) currentFeature = featureType.detailed;
+							// if (getColumnHeaderValue(textItem, [0], '') === '') {
+
+							// } else {
+							// 	console.log(
+							// 		`Ошибка парсинга выдела ${getColumnHeaderValue(textItem, [0], '')} в квартале ${currentKvartal}`
+							// 	);
+							// }
 						} //Проверяем наличие статистической части по кварталу
 						else if (checkForFeatureType(textItem, featureType.summary)) {
 							if (currentFeature !== featureType.summary) currentFeature = featureType.summary;
+						} else {
+							if (textItem.trim() !== '') {
+								console.log(`Вероятно ошибка парсинга выдела ${textItem} в квартале ${currentKvartal}`);
+							}
 						}
 
 						//console.log(checkForFeatureType(textItem, featureType.main), 'CHECK FOR START FEATURE');
@@ -465,7 +527,7 @@ const tryParseForestryData = (data) => {
 								}
 
 								break;
-							case featureType.sub:
+							case featureType.detailed:
 								break;
 						}
 					}
