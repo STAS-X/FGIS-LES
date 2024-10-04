@@ -261,7 +261,7 @@ const tryParseForestryData = (data) => {
 		const kandidate = getColumnHeaderValue(textItem, [2 - 23], '', true).trim();
 		let isForest = (isObject = false);
 		let lotCompositionName = '';
-
+ 
 		if (
 			compositionInfo.forestItem.findIndex((item) => {
 				if (kandidate.search(item) == 0 > -1) lotCompositionName = item;
