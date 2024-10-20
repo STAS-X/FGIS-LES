@@ -81,8 +81,7 @@ class ForestParser {
     #readForestryHeader = () => {
         try {
             const jsonString = fs.readFileSync(
-                path.resolve(rootPath, this.#toPath, 'schema/fHeader.json'),
-                'utf8'
+                path.resolve(rootPath, this.#toPath, 'schema/fHeader.json')
             );
             const header = JSON.parse(jsonString);
             return header;
