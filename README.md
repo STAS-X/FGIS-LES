@@ -1,1 +1,1 @@
-Server of frontent application for FGIS LES
+Server application for FGIS LES
