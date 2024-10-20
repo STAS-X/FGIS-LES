@@ -62,9 +62,16 @@ class ForestParser {
         this.#isParseHeader = options.isParseHeader ?? true;
     }
 
-    initParserData = async () => {
+    parseForestry = async () => {
+        // В начале запускаем функцию инициализации исходных данных для дальнейшего использовани при парсинге таксо
+        await this.#initParserData();
+    };
+
+    #initParserData = async () => {
         // Создаем или открываем dbf базу для внесения данных таксационной карты
         this.#dbfFile = await this.#openOrCreateDbfFile();
+        // Читаем map файл со всеми классификаторами и кодами сущностей для лесничества
+        this.#mapFile = await this.#openMapForestry();
         // Если не нужно парсить заголовок таблицы - загружаем его из подготовленного файла
         if (!this.#isParseHeader)
             this.#tableHeaders = this.#readForestryHeader();
@@ -85,10 +92,10 @@ class ForestParser {
         }
     };
 
-    // Читаем map файл с классификатором исходных данных для лесничеств
+    // Читаем map файл с классификатором исходных данных для лесничества
     #openMapForestry = async () => {
         try {
-            this.#mapFile = JSON.parse(
+            return JSON.parse(
                 await anyReader.getText(
                     path.resolve(
                         rootPath,
