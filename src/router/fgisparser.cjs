@@ -2,6 +2,7 @@ const Router = require('express');
 const router = new Router();
 
 const { DBFFile } = require('dbffile');
+const { ForestParser } = require('../lib/reader/forestParser.cjs');
 
 // const batchRead = async () => {
 // 	let dbf = await DBFFile.open(path.resolve(__dirname, '../assets/test.dbf'), { encoding: 'UTF-8' });
@@ -27,19 +28,25 @@ router.get('/parse', async (req, res) => {
 
     let schemaData = '';
 
+    const parserOptions = {
+        forestryMain: 'Кинешемское',
+        forestryDistrict: 'Елнатское',
+        forestryTract: '',
+        forestryRegion: 'Ивановская область',
+        forestryFile: '1.docx',
+        coordSystem: 'msk37Zona1',
+        taxerCompany: 'ООО «Лесопроектное бюро»',
+        taxerExpedition: 1,
+        isParseHeader: false,
+    };
+
+    const parser = new ForestParser(parserOptions);
+    parser.parseForestry();
+
     anyReader
         .getText(path.resolve(__dirname, '../assets/схема_бд.xlsx'))
         .then(async (data) => {
-            tryParseForestryData({
-                forestryMain: 'Кинешемское',
-                forestryDistrict: 'Елнатское',
-                forestryTract: '',
-                forestryRegion: 'Ивановская область',
-                coordSystem: 'msk37Zona1',
-                taxerCompany: 'ООО «Лесопроектное бюро»',
-                taxerExpedition: 1,
-                isParseHeader: false,
-            });
+            //tryParseForestryData(parserOptions);
             let schemaData =
                 '<table><caption><h3>Таблица схемы БД</h3></caption>';
             const dbFields = [];

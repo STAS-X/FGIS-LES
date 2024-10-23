@@ -208,7 +208,7 @@ const tryParseForestryData = async (parserOptions) => {
     const readForestryHeader = () => {
         try {
             const jsonString = fs.readFileSync(
-                path.resolve(rootPath, toPath, 'schema/fHeader.json'),
+                path.resolve(rootPath, toPath, 'schema/tableHeader.json'),
                 'utf8'
             );
             const header = JSON.parse(jsonString);
@@ -765,7 +765,7 @@ const tryParseForestryData = async (parserOptions) => {
                                         path.resolve(
                                             rootPath,
                                             toPath,
-                                            'schema/fHeader.json'
+                                            'schema/tableHeader.json'
                                         ),
                                         JSON.stringify(forestryHeaderValues),
                                         (err) => {
@@ -776,7 +776,7 @@ const tryParseForestryData = async (parserOptions) => {
                                                 );
                                             } else {
                                                 console.log(
-                                                    'Successfully wrote file'
+                                                    'Successfully write file'
                                                 );
                                             }
                                         }
