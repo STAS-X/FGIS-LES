@@ -29,19 +29,18 @@ router.get('/parse', async (req, res) => {
     let schemaData = '';
 
     const parserOptions = {
-        forestryMain: 'Кинешемское',
-        forestryDistrict: 'Елнатское',
-        forestryTract: '',
+        forestryMain: 'Шуйское',
+        forestryDistrict: '',
+        forestryTract: 'Палехское',
         forestryRegion: 'Ивановская область',
         forestryFile: '1.docx',
         coordSystem: 'msk37Zona1',
         taxerCompany: 'ООО «Лесопроектное бюро»',
         taxerExpedition: 1,
-        isParseHeader: false,
+        isParseHeader: true,
     };
 
-    const parser = new ForestParser(parserOptions);
-    parser.parseForestry();
+    //parser = null;
 
     anyReader
         .getText(path.resolve(__dirname, '../assets/схема_бд.xlsx'))
@@ -151,10 +150,12 @@ router.get('/parse', async (req, res) => {
 
             //await dbf.appendRecords(dbRecords);
             console.log(`${dbRecords.length} records added.`);
-
             schemaData += '</table>';
             //res.set({ 'content-type': 'text/html; charset=utf-8' })
-            res.end(`<h1>Parser taksoCards!</h1>${schemaData}`);
+            res.send(`<h1>Parser taksoCards!</h1>${schemaData}`);
+
+            const parser = new ForestParser(parserOptions);
+            parser.parseForestry();
         });
 });
 
