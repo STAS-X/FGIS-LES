@@ -29,8 +29,8 @@ const lotAdditionalData = [
     { name: 'подлесок ', isElement: true },
     { name: 'подрост ', isElement: true },
     { name: 'культуры-', isElement: true },
-    { name: 'год создания л/к ', isElement: false },
-    { name: 'год вырубки ', isElement: false },
+    { name: 'год создания л/к ', isElement: true },
+    { name: 'год вырубки ', isElement: true },
     { name: 'полнота ', isElement: false },
     { name: 'ЛЕСОХОЗЯЙСТВЕHHАЯ', isElement: false },
 ];
@@ -90,7 +90,7 @@ const lotExtraLandType = [
     {
         value: 'Сады',
         type: 'лесные земли',
-        tier: 1,
+        tier: 3,
         code: '1343',
     },
     {
@@ -102,7 +102,12 @@ const lotExtraLandType = [
     {
         value: 'Культуры н/с|Культуры несомкнувшиеся',
         type: 'лесные земли',
-        tier: 4,
+        code: '1201',
+    },
+    {
+        value: 'Несомкн.к.под полог.',
+        type: 'лесные земли',
+        tier: 6,
         code: '1201',
     },
     {
@@ -113,15 +118,32 @@ const lotExtraLandType = [
     },
     {
         value: 'Прогалина',
-        type: 'лесные земли',
-        tier: 1,
-        code: '1510',
+        type: 'нелесные земли',
+        code: '1520',
     },
     {
-        value: 'Культуры с культурами под пологом|Насажд.с культ.подпол.|Несомкн.к.непокр.пл.',
+        value: 'Культуры с культурами под пологом',
         type: 'лесные земли',
-        tier: 1,
+        tier: 2,
         code: '1114',
+    },
+    {
+        value: 'Насажд.с культ.подпол.',
+        type: 'лесные земли',
+        tier: 2,
+        code: '1107',
+    },
+    {
+        value: 'Несомкн.к.реконстр.',
+        type: 'лесные земли',
+        tier: 7,
+        code: '1202',
+    },
+    {
+        value: 'Несомкн.к.непокр.пл.',
+        type: 'лесные земли',
+        tier: 6,
+        code: '1201',
     },
     {
         value: 'Единичные деревья',
@@ -130,22 +152,38 @@ const lotExtraLandType = [
         code: '1101',
     },
     {
-        value: 'Вырубка',
-        type: 'лесные земли',
-        tier: 1,
-        code: '1509',
-    },
-    {
         value: 'Лесосека|Текущая лесосека',
         type: 'лесные земли',
         tier: 1,
         code: '1507',
     },
     {
+        value: 'Вырубка',
+        type: 'лесные земли',
+        tier: 1,
+        code: '1509',
+    },
+    {
         value: 'Редина естественная|Редина',
         type: 'лесные земли',
         tier: 8,
         code: '1400',
+    },
+    {
+        value: 'Сухостой свежий',
+        type: 'лесные земли',
+        tier: 13,
+        code: '1101',
+    },
+    {
+        value: 'Насаждение погибшее',
+        type: 'лесные земли',
+        code: '1504',
+    },
+    {
+        value: 'Гарь',
+        type: 'лесные земли',
+        code: '2560',
     },
     {
         value: 'Дороги полевые, лесные',
@@ -158,8 +196,18 @@ const lotExtraLandType = [
         code: '1001',
     },
     {
+        value: 'Канал',
+        type: 'нелесные земли',
+        code: '2113',
+    },
+    {
+        value: 'Площадки с памятниками',
+        type: 'нелесные земли',
+        code: '2418',
+    },
+    {
         value: 'Болото',
-        type: 'лесные земли',
+        type: 'нелесные земли',
         code: '2507',
     },
     {
@@ -167,7 +215,7 @@ const lotExtraLandType = [
         type: 'нелесные земли',
         code: '2322',
     },
-    // Добавляем промежуточное описание культур для интерпретации первичных нзвание лесных земель, с целью дальнейшего уточнения
+    // Добавляем промежуточное описание культур для интерпретации первичных названий лесных земель, с целью дальнейшего уточнения
     {
         value: 'Культ|Насажд',
         type: 'лесные земли',
@@ -194,11 +242,14 @@ class ForestParser {
     #currentStep = searchStep.stepKvartal;
     #currentFeatureType = featureType.kvartal;
 
-    #forestryMain = null;
-    #forestryDistrict = null;
-    #forestryTract = null;
-    #forestryRegion = null;
+    forestryMain = null;
+    forestryDistrict = null;
+    forestryTract = null;
+    forestryAdm = null;
+    forestryRegion = null;
+
     #forestryCS = null;
+    #forestryAllCodes = {};
     #taxerCompany = null;
     #taxerExpedition = null;
 
@@ -218,12 +269,13 @@ class ForestParser {
     #dbfFile = null;
     #mapFile = null;
     #messagerForestry = null;
-    #schemaFields = null;
     #tableHeaders = [];
 
     #forestryFile = null;
 
     #forestryContent = [];
+
+    #forestErrorList = null;
 
     #toPath = 'src/assets';
 
@@ -232,43 +284,81 @@ class ForestParser {
     constructor(options = {}) {
         //super();
 
-        this.#forestryMain = options.forestryMain;
-        this.#forestryDistrict = options.forestryDistrict;
-        this.#forestryTract = options.forestryTract;
-        this.#forestryRegion = options.forestryRegion;
-        this.#forestryCS = options.forestryCS;
+        this.forestryMain = options.forestryMain;
+        this.forestryDistrict = options.forestryDistrict;
+        this.forestryTract = options.forestryTract;
+        this.forestryRegion = options.forestryRegion;
+        this.forestryCS = options.forestryCS;
+
         this.#taxerCompany = options.taxerCompany;
         this.#taxerExpedition = options.taxerExpedition;
         this.#isParseHeader = !!options.isParseHeader;
 
-        this.#forestryFile = options.forestryFile;
+        this.forestryFile = path.parse(options.forestryFile).base;
+        this.#forestErrorList = {};
 
-        this.#noLandType = new Set();
-        this.#noAdditional = new Set();
-        this.#noProtectZone = new Set();
+        return async () => {
+            // Запускаем функцию инициализации исходных данных для дальнейшего использовани при парсинге таксационной карты
+            await this.#initParserData();
+            return this; // Return the newly-created instance
+        };
     }
 
     parseForestry = async () => {
-        // В начале запускаем функцию инициализации исходных данных для дальнейшего использовани при парсинге таксо
-        await this.#initParserData();
-        // Начинаем парсить данные таксационной карточки
-        for (const forestItem of this.#forestryContent) {
-            //console.log(forestItem);
-            if (this.#currentFeatureType !== featureType.final) {
-                // Проверяем каждую строку на наличие различных сущностей и подсказываем как необходимо парсить текущие данные
-                this.#checkForForestryFeature(forestItem);
-                //if (forestItem)
-                // Распарсиваем содержимое строки таксационной карточки по описаниям лесных пород для текущего выдела
-                this.#parseLotContent(forestItem);
-            }
-            //if (Number(this.#currentKvartal) == 12) break;
-            // if (this.#currentLot == 7) {
-            //     this.#messagerForestry.logMessages(this.#forestryResult);
-            //     //break;
-            // }
+        // Инициализируем словари для хранения отсутствующих сущностей таксационного описания выделов леса
+        this.#noLandType = new Set();
+        this.#noAdditional = new Set();
+        this.#noProtectZone = new Set();
+
+        this.#forestryResult = {};
+
+        // Ищем и присваиваем требуемые кода для заполнения DBF файла (регион, лесничество, урочище, GIR, административный район) и считываем данные таксационного описания лесничества
+        await this.#parseForestryCodesAndContent();
+
+        // Если в процессе инициализации начальных данных появились критические ошибки выходим из программы
+        if (this.#forestErrorList.size > 0) {
+            for (const [key, value] of this.#forestErrorList.entries())
+                console.error(`Ошибка [${key}] - ${value}`);
         }
-        // Записываем полученный после парсинга объект в лог файл
-        this.#messagerForestry.logMessages(this.#forestryResult);
+
+        console.log(
+            `Начинаем парсинг таксационного описания лесничества ${this.forestryMain}/${this.forestryDistrict}\nв регионе ${this.forestryRegion} - файл [${this.forestryFile}]`
+        );
+        // console.log(
+        //     this.#forestryAllCodes,
+        //     this.#forestryContent.length,
+        //     'Кода лесничества из map файла'
+        // );
+        try {
+            // Начинаем парсить данные таксационной карточки
+            for (const forestItem of this.#forestryContent) {
+                //console.log(forestItem);
+                if (this.#currentFeatureType !== featureType.final) {
+                    // Проверяем каждую строку на наличие различных сущностей и подсказываем как необходимо парсить текущие данные
+                    this.#checkForForestryFeature(forestItem);
+                    //if (forestItem)
+                    // Распарсиваем содержимое строки таксационной карточки по описаниям лесных пород для текущего выдела
+                    this.#parseLotContent(forestItem);
+                }
+                //if (Number(this.#currentKvartal) > 1) break;
+            }
+            // Выводим сообщение о количестве выделов в квартале для последнего квартала
+            console.log(
+                `В квартале [${this.#currentKvartal}] найдено ${
+                    this.#countLots
+                } выделов`
+            );
+
+            // Записываем полученный после парсинга объект в лог файл
+            this.#messagerForestry.logMessages(this.#forestryResult);
+
+            // Запускаем функцию преобразования объекта #forestryResult в базу данных лесничества DBF (кодировка UTF-8)
+            await this.#addForesteryToDBF();
+        } catch (err) {
+            console.error(
+                `Во время парсинга таксационной карточки произошла ошибка: [${err.name}] \n ${err.message}`
+            );
+        }
     };
 
     #initParserData = async () => {
@@ -282,6 +372,312 @@ class ForestParser {
                 this.#tableHeaders = this.#readForestryHeader();
                 console.log('Заголовок таблицы считан из файла');
             }
+        } catch (err) {
+            console.log(`Error occured:\n ${err}`);
+        }
+    };
+
+    #addForesteryToDBF = async () => {
+        // Вначале создаем полносписочный шаблон записи для добавления в БД
+        const recordsToAppend = [];
+        const record = this.#dbFields.reduce((result, fieldItem) => {
+            result[fieldItem.name] = this.#formatField(
+                '',
+                fieldItem.type,
+                fieldItem.size,
+                fieldItem.decimalPlaces ? fieldItem.decimalPlaces : 0,
+                false
+            );
+
+            return result;
+        }, {});
+
+        //console.log(record, 'Запись для добавления в БД');
+        if (this.#countKvartals > 0) {
+            // Если мы распарсили кварталы и выдела, то пытаемся прочитать информацию и вставиьт ее в базу
+            for (const kvartal of Object.keys(this.#forestryResult)) {
+                for (const lot of Object.keys(
+                    this.#forestryResult[kvartal].lots
+                )) {
+                    const currentLot = this.#forestryResult[kvartal].lots[lot];
+
+                    const GIR = this.#forestryAllCodes['F_TRACT']
+                        ? this.#forestryAllCodes['F_TRACT']
+                        : this.#forestryAllCodes['F_DIST'];
+
+                    recordsToAppend.push({
+                        ...record,
+                        MUK:
+                            this.#forestryAllCodes['F_REG'] * 10000 +
+                            this.#forestryAllCodes['F_MAIN'] * 100 +
+                            GIR,
+                        SRI: this.#forestryAllCodes['F_REG'],
+                        MU: this.#forestryAllCodes['F_MAIN'],
+                        GIR,
+                        ADMR: this.#forestryAllCodes['F_ADM'],
+                        MK: currentLot['FP_CODE'],
+                        UD: Number(
+                            currentLot['FP_CODE'].toString().slice(0, 2)
+                        ),
+                        KV: Number(kvartal),
+                        ZK: Number(currentLot['compositions'][0]?.['LCODE']),
+                        ZKG: Number(
+                            currentLot['compositions'][0]?.['LCODE']
+                                .toString()
+                                .slice(0, 2)
+                        ),
+                        PL: Number(Number(currentLot['kvArea']).toFixed(1)),
+
+                        SKNR: Number(lot),
+                        KL: `${this.#forestryAllCodes['F_REG']}${
+                            this.#forestryAllCodes['F_MAIN'] < 10 ? '0' : ''
+                        }${this.#forestryAllCodes['F_MAIN']}${
+                            GIR.toString().length < 2
+                                ? '0'.repeat(2 - GIR.toString().length)
+                                : ''
+                        }${GIR}${
+                            kvartal.toString().length < 4
+                                ? '0'.repeat(4 - kvartal.toString().length)
+                                : ''
+                        }${kvartal}${
+                            lot.toString().length < 3
+                                ? '0'.repeat(3 - lot.toString().length)
+                                : ''
+                        }${lot}`,
+                        KZ_NAME:
+                            currentLot['compositions'][0]?.['LN'].slice(
+                                0,
+                                35
+                            ) ?? 'Естественное происхождение',
+                        // Добавляем информацию по составу пород выдела и каждой породе в отдельности
+                        ...this.#parseCompositioToDBF(currentLot),
+                    });
+
+                    // Проверяем корректность заполнения TLU
+                    // for (const compose of currentLot['compositions']) {
+                    //     if (
+                    //         compose &&
+                    //         compose['TLU'] &&
+                    //         compose['TLU'].length !== 2
+                    //     )
+                    //         console.log(
+                    //             `Ошибка заполнения TLU для выдела/квартала [${kvartal}/${lot}]`
+                    //         );
+                    // }
+                }
+            }
+            // Загоняем шаблонную запись в DBF
+            if (recordsToAppend.length > 0) {
+                await this.#dbfFile.appendRecords(recordsToAppend);
+                console.log(
+                    `В БД ${this.forestryMain}.dbf добавлено [${
+                        recordsToAppend.length
+                    }/${this.#dbfFile.recordCount}] записей для лесничества [${
+                        this.forestryMain
+                    }/${this.forestryDistrict}] в регионе '${
+                        this.forestryRegion
+                    }'`
+                );
+            }
+        } else {
+            console.log(
+                `В лесничестве '${this.forestryMain}/${this.forestryDistrict}' файл [${this.forestryFile}] не найдено ни одного квартала(выдела)`
+            );
+        }
+    };
+
+    // Формирует значения колонок по превалирующей породе, бонитете, сведения по выдеу в целом и по каждой пароде в частности
+    #parseCompositioToDBF = (currentLot) => {
+        const compositionResult = {};
+        let hasTLU = false;
+        let compositionNum = 1;
+        // Вначале добавляем общие характеристики для описания пород в выделе
+        //compositionResul.push({})
+        for (const composition of currentLot['compositions']) {
+            if (
+                composition['detailes']?.length > 0 &&
+                composition['TLU']?.length == 2 &&
+                !hasTLU
+            ) {
+                hasTLU = true;
+
+                // Вначале заполняем общие сведения по выделу
+                compositionResult['BON'] = this.#formatValueByField(
+                    composition['FB'],
+                    'BON'
+                );
+                compositionResult['VMR'] = this.#formatValueByField(
+                    composition['detailes'][0]['CN'],
+                    'VMR'
+                );
+                compositionResult['MTIP'] = this.#formatValueByField(
+                    composition['TLU'][0],
+                    'MTIP'
+                );
+                compositionResult['DTG'] = this.#formatValueByField(
+                    composition['TLU'][1],
+                    'DTG'
+                );
+                compositionResult['SVTB'] = this.#formatValueByField(
+                    composition['FLC'],
+                    'SVTB'
+                );
+                compositionResult['SVTL'] = this.#formatValueByField(
+                    composition['FLD'],
+                    'SVTL'
+                );
+                compositionResult['SUX'] = this.#formatValueByField(
+                    composition['FLS'],
+                    'SUX'
+                );
+                compositionResult['AGR'] = this.#formatValueByField(
+                    composition['AG'],
+                    'AGR'
+                );
+                compositionResult['STUR'] = this.#formatValueByField(
+                    Number(composition['FLR']) * 10,
+                    'STUR'
+                );
+                compositionResult['AKL'] = this.#formatValueByField(
+                    composition['AC'],
+                    'AKL'
+                );
+            }
+            // Далее переходим к наполнению колонок по каждой породе сквозной нумерацией, начиная с 1
+            if (compositionNum < 11 && composition['detailes']) {
+                let newARD = 0;
+                let newAMZ = 0;
+                for (const detail of composition['detailes']) {
+                    // Есл обнаруживаем пустые деревья, переходим к следуюей породе
+                    if (detail['CN'] == '-') continue;
+
+                    if (newARD == 0) newARD = composition['FL'] || detail['CT'];
+                    if (newAMZ == 0) newAMZ = detail['CA'];
+
+                    compositionResult[`ARD${compositionNum}`] =
+                        this.#formatValueByField(
+                            newARD,
+                            `ARD${compositionNum}`
+                        );
+                    compositionResult[`KF${compositionNum}`] =
+                        this.#formatValueByField(
+                            detail['CK'],
+                            `KF${compositionNum}`
+                        );
+                    compositionResult[`MR${compositionNum}`] =
+                        this.#formatValueByField(
+                            detail['CN'],
+                            `MR${compositionNum}`
+                        );
+                    compositionResult[`AMZ${compositionNum}`] =
+                        this.#formatValueByField(
+                            newAMZ,
+                            `AMZ${compositionNum}`
+                        );
+                    compositionResult[`H${compositionNum}`] =
+                        this.#formatValueByField(
+                            detail['CH'],
+                            `H${compositionNum}`
+                        );
+                    compositionResult[`D${compositionNum}`] =
+                        this.#formatValueByField(
+                            detail['CD'],
+                            `D${compositionNum}`
+                        );
+                    compositionResult[`PSP${compositionNum}`] =
+                        this.#formatValueByField(
+                            detail['CC'],
+                            `PSP${compositionNum}`
+                        );
+                    compositionResult[`KIL${compositionNum}`] =
+                        this.#formatValueByField(0, `KIL${compositionNum}`);
+                    compositionResult[`SKAL${compositionNum}`] =
+                        this.#formatValueByField(
+                            detail['FFN'],
+                            `SKAL${compositionNum}`
+                        );
+                    compositionResult[`SPS${compositionNum}`] =
+                        this.#formatValueByField(0, `SPS${compositionNum}`);
+                    compositionResult[`TUR1H${compositionNum}`] =
+                        this.#formatValueByField(
+                            detail['CS'],
+                            `TUR1H${compositionNum}`
+                        );
+                    compositionNum++;
+                }
+            }
+        }
+
+        return compositionResult;
+    };
+
+    // Функци считывает из классификатора (map)коды лесничества, уч. лесничества, урочища, района и т.п.
+    #parseForestryCodesAndContent = async () => {
+        try {
+            const tractCode = path.parse(this.forestryFile).name.indexOf('-')
+                ? Number(path.parse(this.forestryFile).name.split('-')[0])
+                : Number(path.parse(this.forestryFile).name);
+
+            if (this.#mapFile['districtForestries']) {
+                const forestryIndex = this.#mapFile[
+                    'districtForestries'
+                ].findIndex((districtItem) => {
+                    return (
+                        districtItem[1].search(this.forestryMain) == 0 &&
+                        districtItem[2].search(this.forestryRegion) == 0 &&
+                        districtItem[5] == tractCode
+                    );
+                });
+                if (forestryIndex > -1) {
+                    const regionCode =
+                        this.#mapFile['districtForestries'][forestryIndex][4];
+                    this.forestryMain =
+                        this.#mapFile['districtForestries'][forestryIndex][1];
+                    this.forestryDistrict =
+                        this.#mapFile['districtForestries'][forestryIndex][0];
+                    this.forestryTract =
+                        this.#mapFile['districtForestries'][forestryIndex][3];
+
+                    this.#forestryAllCodes['F_REG'] = Number(
+                        regionCode.split(':')[0]
+                    );
+                    this.#forestryAllCodes['F_MAIN'] = Number(
+                        regionCode.split(':')[1]
+                    );
+                    this.#forestryAllCodes['F_DIST'] = Number(
+                        regionCode.split(':')[2]
+                    );
+                    this.#forestryAllCodes['F_TRACT'] = Number(
+                        this.#mapFile['districtForestries'][forestryIndex][5]
+                    );
+                    this.#forestryAllCodes['F_ADM'] = Number(
+                        this.#mapFile['districtForestries'][forestryIndex][6]
+                    );
+                }
+            }
+            if (this.#forestryAllCodes['F_REG'] < 1)
+                this.#forestErrorList.set(
+                    'F_CODE_ERROR',
+                    `Не удалось найти код региона ${this.forestryRegion} в map файле`
+                );
+            if (this.#forestryAllCodes['F_MAIN'] < 1)
+                this.#forestErrorList.set(
+                    'F_CODE_ERROR',
+                    `Не удалось найти код лесничества ${this.forestryMain} в map файле`
+                );
+            if (this.#forestryAllCodes['F_DIST'] < 1)
+                this.#forestErrorList.set(
+                    'F_CODE_ERROR',
+                    `Не удалось найти код участкового лесничества ${this.forestryMain} в map файле`
+                );
+            if (this.#forestryAllCodes['F_TRACT'] < 1)
+                this.#forestErrorList.set(
+                    'F_CODE_ERROR',
+                    `Не удалось найти код урочища ${this.forestryTract} в map файле`
+                );
+
+            // Если обнаружены критические ошибки выходим из функции инициализации парсера
+            if (this.#forestErrorList.size > 0) return;
             // Создаем логгер парсинга
             this.#messagerForestry = this.#messageToLogForestry();
 
@@ -289,7 +685,7 @@ class ForestParser {
             this.#forestryContent =
                 (
                     await this.#openFileForestry(
-                        `${this.#forestryMain}/${this.#forestryFile}`,
+                        `${this.forestryMain}/${this.forestryFile}`,
                         false
                     )
                 ).split('\n') ?? [];
@@ -297,20 +693,30 @@ class ForestParser {
             if (this.#forestryContent.length > 0) {
                 console.log(
                     //this.#forestryContent,
-                    `Данные файла лесничества ${this.#forestryMain} - [${
-                        this.#forestryFile
-                    }] прочитаны`
+                    `Данные файла лесничества ${this.forestryMain} - [${this.forestryFile}] прочитаны`
                 );
             } else {
                 console.log(
-                    `Файл лесничества ${this.#forestryMain} - [${
-                        this.#forestryFile
-                    }] - пустой`
+                    `Файл лесничества ${this.forestryMain} - [${this.forestryFile}] - пустой`
                 );
             }
         } catch (err) {
-            console.log(`Error occured:\n ${err}`);
+            this.#forestErrorList.set(
+                'INIT_PARAMS',
+                `Во время инициализации исходных данных произошла ошибка - [${err}]`
+            );
         }
+    };
+
+    #formatValueByField = (value, fieldName) => {
+        const dbField = this.#dbFields.find((field) => field.name == fieldName);
+        return this.#formatField(
+            value,
+            dbField.type,
+            dbField.size,
+            dbField.decimalPlaces ? dbField.decimalPlaces : 0,
+            false
+        );
     };
 
     // Функция проверяет тип объекта текущей строки: квартал, выдел, порода, дополнение или статистика
@@ -385,11 +791,13 @@ class ForestParser {
             // Если это не состав пород, тогда это текущая категория леса
             // Если текущая категория леса Единичные деревья, то добавляем 0,так как коэффициент породы может отсутствовать!
             const compositionText = `${
-                (this.#currentLandName == 'Единичные деревья' ||
-                    this.#currentLandName == 'Сады') &&
-                this.#getColumnHeaderValue(textContent, [2], '') ==
-                    this.#getColumnHeaderValue(textContent, [5], '')
-                    ? '1'
+                this.#checkForLandInTier(this.#currentLandName) &&
+                (!this.#checkForCompositition(
+                    this.#getColumnHeaderValue(textContent, [2], '')
+                ).isComposition ||
+                    this.#getColumnHeaderValue(textContent, [2], '') ==
+                        this.#getColumnHeaderValue(textContent, [5], ''))
+                    ? '0'
                     : ''
             }${this.#getColumnHeaderValue(textContent, [2], '')}`;
 
@@ -416,6 +824,17 @@ class ForestParser {
                     this.#getColumnHeaderValue(textContent, [5], '') ||
                     this.#getColumnHeaderValue(textContent, [12], '')
                 ) {
+                    // if (!this.#checkForLandInTier(this.#currentLandName))
+                    //     console.log(
+                    //         compositionText,
+                    //         this.#currentLandName,
+                    //         this.#currentComposition,
+                    //         compositionFullName,
+                    //         this.#currentComposition !== compositionFullName,
+                    //         this.#checkForCompositition(compositionText)
+                    //             .isComposition
+                    //     );
+
                     if (this.#currentComposition !== compositionFullName) {
                         if (!this.#currentLandName) {
                             this.#currentLandName =
@@ -462,18 +881,34 @@ class ForestParser {
                 }
             } else {
                 // Проверяем, если в колонке состава выдела есть какое-то наименование сущности, но оно не состав пород, то мы попали на новую категорию земель
-                if (this.#getColumnHeaderValue(textContent, [2], '') !== '') {
+                if (this.#getColumnHeaderValue(textContent, [2], '')) {
                     const newLandName = this.#getColumnHeaderValue(
                         textContent,
                         //this.#currentLandName ||
                         Number(
-                            this.#getColumnHeaderValue(textContent, [3], '')
+                            this.#getColumnHeaderValue(textContent, [11], '')
                         ) > 0 ||
-                            Number(
-                                this.#getColumnHeaderValue(textContent, [4], '')
-                            ) > 0
-                            ? [2]
-                            : ['2 - 6'],
+                            this.#getColumnHeaderValue(textContent, [11], '') ==
+                                '-'
+                            ? Number(
+                                  this.#getColumnHeaderValue(
+                                      textContent,
+                                      [4],
+                                      ''
+                                  )
+                              ) > 0
+                                ? Number(
+                                      this.#getColumnHeaderValue(
+                                          textContent,
+                                          [3],
+                                          ''
+                                      )
+                                  ) > 0
+                                    ? [2]
+                                    : ['2-3']
+                                : ['2-4']
+                            : ['2-11'],
+
                         ''
                     );
 
@@ -637,67 +1072,67 @@ class ForestParser {
                         Number(
                             this.#getColumnHeaderValue(textContent, [3], '') > 0
                         ) ||
-                        this.#getColumnHeaderValue(textContent, [12], '')
+                        (this.#getColumnHeaderValue(textContent, [12], '') &&
+                            !currentComposition['TLU'])
                     ) {
                         // Мы на строке с превалирующей породой
-
+                        // Заносим данные общие для всего породного состава
                         currentComposition['FL'] =
-                            this.#getColumnHeaderValue(textContent, [3], '') ||
-                            currentComposition['FL'];
-
-                        currentComposition['FLH'] =
-                            this.#getColumnHeaderValue(textContent, [4], '') ||
-                            currentComposition['FLH'];
-                        currentComposition['FC'] =
-                            !currentComposition['FC'] &&
-                            this.#getColumnHeaderValue(textContent, [5], '')
-                                ? this.#getColumnHeaderValue(
-                                      textContent,
-                                      [5],
-                                      ''
+                            Number(
+                                this.#getColumnHeaderValue(textContent, [3], '')
+                            ) > 0
+                                ? Number(
+                                      this.#getColumnHeaderValue(
+                                          textContent,
+                                          [3],
+                                          ''
+                                      )
                                   )
-                                : currentComposition['FC'];
+                                : this.#checkForLandCategory(
+                                      currentComposition['LN']
+                                  ).landTier;
+
+                        currentComposition['FLH'] = Number(
+                            this.#getColumnHeaderValue(textContent, [4], '')
+                        );
+                        currentComposition['FC'] = this.#getColumnHeaderValue(
+                            textContent,
+                            [5],
+                            ''
+                        );
 
                         currentComposition['AC'] =
                             this.#getColumnHeaderValue(textContent, [9], '') ||
                             currentComposition['AC'];
 
-                        currentComposition['AG'] =
-                            this.#getColumnHeaderValue(textContent, [10], '') ||
-                            currentComposition['AG'];
-
+                        currentComposition['AG'] = Number(
+                            this.#getColumnHeaderValue(textContent, [10], '')
+                        );
                         currentComposition['FB'] =
-                            this.#getColumnHeaderValue(textContent, [11], '') ||
-                            currentComposition['FB'];
-                        currentComposition['FFN'] =
-                            this.#getColumnHeaderValue(textContent, [13], '') ||
-                            currentComposition['FFN'];
-                        currentComposition['FR'] =
-                            this.#getColumnHeaderValue(textContent, [14], '') ||
-                            currentComposition['FFN'];
-                        currentComposition['FLR'] =
-                            this.#getColumnHeaderValue(textContent, [15], '') ||
-                            currentComposition['FLR'];
-
-                        currentComposition['FLS'] =
-                            this.#getColumnHeaderValue(textContent, [18], '') ||
-                            currentComposition['FLS'];
-                        currentComposition['FLSR'] =
-                            this.#getColumnHeaderValue(textContent, [19], '') ||
-                            currentComposition['FLSR'];
-                        currentComposition['FLSS'] =
-                            this.#getColumnHeaderValue(textContent, [20], '') ||
-                            currentComposition['FLSS'];
-                        currentComposition['FLC'] =
-                            this.#getColumnHeaderValue(textContent, [21], '') ||
-                            currentComposition['FLC'];
-                        currentComposition['FLD'] =
-                            this.#getColumnHeaderValue(textContent, [22], '') ||
-                            currentComposition['FLD'];
+                            Number(
+                                this.#getColumnHeaderValue(
+                                    textContent,
+                                    [11],
+                                    ''
+                                )
+                            ) || 0;
+                        currentComposition['FLR'] = Number(
+                            this.#getColumnHeaderValue(textContent, [15], '')
+                        );
+                        currentComposition['FLC'] = Number(
+                            this.#getColumnHeaderValue(textContent, [21], '')
+                        );
+                        currentComposition['FLD'] = Number(
+                            this.#getColumnHeaderValue(textContent, [22], '')
+                        );
 
                         this.#addSingleCompositToLot(textContent);
                         // Для добавления индивидуальной породы проверяем, чтобы в выделе уже было описание состава пород
-                    } else if (currentComposition['CN']) {
+                        // Для добавления хозмероприятий смотрим также на наличие категории лесных земель
+                    } else if (
+                        currentComposition['CN'] ||
+                        currentComposition['LN']
+                    ) {
                         this.#addSingleCompositToLot(textContent);
                     }
                     break;
@@ -754,7 +1189,7 @@ class ForestParser {
             textContent.search(/Участковое /i) > 0 ||
             textContent.search(/Лесничество/i) > 0 ||
             textContent.search(/уч.лес/i) > 0 ||
-            textContent.search(this.#forestryDistrict) > 0 ||
+            textContent.search(this.forestryMain) > 0 ||
             textContent.search(/Категория защ/i) > 0 ||
             textContent.search(/Целевое назн/i) > 0
         );
@@ -816,6 +1251,12 @@ class ForestParser {
             // Проверяем код типа лесных земель из классификатора landType map файла
             const landTypeIndex = this.#mapFile['landType'].findIndex(
                 (landItem, index) => {
+                    //if (!landItem[4] && landItem[0].search(landCategory) == 0)
+                    // console.log(
+                    //     landItem[0],
+                    //     landItem[4],
+                    //     'Категория не определена!'
+                    // );
                     return index > 0 && landItem[0].search(landCategory) == 0;
                 }
             );
@@ -831,7 +1272,7 @@ class ForestParser {
                         ? composeType.object
                         : composeType.culture;
                 result['landCode'] =
-                    this.#mapFile['landType'][landTypeIndex][4] || '0';
+                    this.#mapFile['landType'][landTypeIndex][4];
             } else {
                 // Если не нашли категорию в map файле пробуем найти ее в доп материалах к программе
                 const landExtraIndex = lotExtraLandType.findIndex((item) => {
@@ -866,26 +1307,29 @@ class ForestParser {
                     result['landName'] = landCategory;
                     result['landType'] = 'нелесные земли';
                     result['compositionType'] = composeType.object;
-                    result['landCode'] = '-1';
+                    result['landCode'] = -1;
 
                     //console.log(landCategory, 'Нелесное описание объекта');
-
-                    if (
-                        this.#currentFeatureType == featureType.main &&
-                        !this.#noLandType.has(landCategory) &&
-                        logWarning
-                    ) {
-                        this.#noLandType.add(landCategory);
-
-                        this.#messagerForestry.warningMessages(
-                            `Не удалось распарсить категорию земель [${landCategory}] для выдела ${
-                                this.#currentLot
-                            } в квартале ${this.#currentKvartal}`
-                        );
-                    }
                 }
             }
+
+            if (
+                this.#currentFeatureType == featureType.main &&
+                !this.#noLandType.has(landCategory) &&
+                (result['landCode'] || 0) < 1 &&
+                logWarning
+            ) {
+                this.#noLandType.add(landCategory);
+
+                this.#messagerForestry.warningMessages(
+                    `Не удалось распарсить категорию земель [${landCategory}] для выдела ${
+                        this.#currentLot
+                    } в квартале ${this.#currentKvartal}`
+                );
+            }
         }
+        //if (landCategory.search('Прогал') > -1)
+        //    console.log(landCategory, result['landCode']);
         return result;
     };
 
@@ -902,6 +1346,9 @@ class ForestParser {
         ) {
             textContent = textContent.trim();
 
+            const { hasAdditions, additions } =
+                this.#checkForCompositionsOrAdditions();
+
             isAdditional =
                 (textContent.indexOf(':') > -1 &&
                     textContent.split(':').length == 2) ||
@@ -917,8 +1364,6 @@ class ForestParser {
                             value = textContent;
                         }
 
-                        const { hasAdditions } =
-                            this.#checkForCompositionsOrAdditions();
                         //return textContent.trim().search(lotValue.name) == 0;
                         return (
                             (lotValue.isElement &&
@@ -961,14 +1406,18 @@ class ForestParser {
                 !isAdditional &&
                 this.#currentFeatureType == featureType.addition &&
                 !this.#noAdditional.has(textContent) &&
+                (additions || []).length == 0 &&
                 logWarning
             ) {
                 this.#noAdditional.add(textContent);
-                this.#messagerForestry.warningMessages(
-                    `Не удалось распарсить дополнительное описание [${textContent}] для выдела ${
-                        this.#currentLot
-                    } в квартале ${this.#currentKvartal}`
-                );
+                // Если мы не находим дополнения вообще, тогда пишем лог
+                if (!name && !value) {
+                    this.#messagerForestry.warningMessages(
+                        `Не удалось распарсить дополнительное описание [${textContent}] для выдела ${
+                            this.#currentLot
+                        } в квартале ${this.#currentKvartal}`
+                    );
+                }
             }
         }
         return { isAdditional, name, value };
@@ -1015,7 +1464,7 @@ class ForestParser {
 
     // Функция проверки текущей лесной культуры на наличие породного состава и возвращение коэффициента породы
     #checkForCompositition = (composition, koeffIndex = 0) => {
-        const composeMask = new RegExp(/[\d|\+|,]+[А-Я]+/g);
+        const composeMask = new RegExp(/[\d|\+|,]+[А-Я|-]+/g);
         let isComposition = false;
         let koeff = '';
         let fullName = composition;
@@ -1026,7 +1475,6 @@ class ForestParser {
             composition.match(composeMask) &&
             composition.match(composeMask).length > 0
         ) {
-            isComposition = true;
             koeff = composition
                 .match(composeMask)
                 [
@@ -1035,15 +1483,41 @@ class ForestParser {
                         : composition.match(composeMask).length - 1
                 ].match(/[\d\+,]+/g)[0];
             fullName = composition.match(composeMask).join('');
+            isComposition = fullName == composition;
             name = composition
                 .match(composeMask)
                 [
                     koeffIndex < composition.match(composeMask).length
                         ? koeffIndex
                         : composition.match(composeMask).length - 1
-                ].match(/[\d\+,]+/g)[1];
+                ].match(/[А-Я|-]+/g)[0];
         }
-        return { isComposition, koeff, name, fullName };
+        return {
+            isComposition,
+            koeff: isNaN(koeff) ? '0' : koeff,
+            name,
+            fullName,
+        };
+    };
+
+    #checkForLandInTier = (landCategoryName) => {
+        // Проверяем категорию земель на наличии ее в землях с установочным ярусом
+
+        return (
+            lotExtraLandType.findIndex((item) => {
+                return (
+                    item.value.split('|').findIndex((landTypeItem) => {
+                        return (
+                            item.tier &&
+                            landCategoryName &&
+                            landCategoryName.search(
+                                new RegExp(landTypeItem, 'i')
+                            ) == 0
+                        );
+                    }) > -1
+                );
+            }) > -1
+        );
     };
 
     // Функция для парсинга значения выражения по типу, если значение не определено, то возвращается предыдущее
@@ -1074,45 +1548,59 @@ class ForestParser {
                 );
         }
 
+        // Если категория земель нелесные земли выходим из дальнейшего парсингаили отсутствует описание пород
         if (cType == composeType.object) return;
 
         if (!currentComposition['TLU']) {
-            if (this.#getColumnHeaderValue(textContent, [12], ''))
+            if (
+                this.#getColumnHeaderValue(textContent, [12], '') &&
+                this.#getColumnHeaderValue(textContent, [12], '') !== '-'
+            )
                 currentComposition['TLU'] = [
                     this.#getColumnHeaderValue(textContent, [12], ''),
                 ];
-        } else if (this.#getColumnHeaderValue(textContent, [12], '')) {
+        } else if (
+            this.#getColumnHeaderValue(textContent, [12], '') &&
+            this.#getColumnHeaderValue(textContent, [12], '') !== '-'
+        ) {
             currentComposition['TLU'].push(
                 this.#getColumnHeaderValue(textContent, [12], '')
             );
         }
 
-        // Если найдена новая порода, то добавляем ее детальное описание в текущую сущность выдела
+        // Если отсутствует описание пород выходим из дальнейшего парсинга
+        if (!currentComposition['CN']) return;
+
         if (this.#getColumnHeaderValue(textContent, [5], '')) {
+            // Если найдена новая порода, то добавляем ее детальное описание в текущую сущность выдела
             if (!currentComposition['detailes'])
                 currentComposition['detailes'] = [];
             const compositionIndex = currentComposition['detailes'].length;
+
             currentComposition['detailes'].push({
                 CN: this.#checkForCompositition(
                     this.#getColumnHeaderValue(textContent, [5], ''),
                     0
                 ).name,
-                CT: this.#checkForLandCategory(currentComposition['LN']).tier,
+                CT:
+                    this.#checkForLandCategory(currentComposition['LN'])
+                        .landTier ||
+                    Number(this.#getColumnHeaderValue(textContent, [3], '')) ||
+                    1,
                 CK: this.#checkForCompositition(
                     currentComposition['CN'],
                     compositionIndex
                 ).koeff,
-                CA:
-                    Number(this.#getColumnHeaderValue(textContent, [6], '')) ||
-                    0,
-                CH:
-                    Number(this.#getColumnHeaderValue(textContent, [7], '')) ||
-                    0,
-                CD:
-                    Number(this.#getColumnHeaderValue(textContent, [8], '')) ||
-                    0,
+                CA: Number(this.#getColumnHeaderValue(textContent, [6], '')),
+                CH: Number(this.#getColumnHeaderValue(textContent, [7], '')),
+                CD: Number(this.#getColumnHeaderValue(textContent, [8], '')),
+                FFN: this.#getColumnHeaderValue(textContent, [13], ''),
+                FR: this.#getColumnHeaderValue(textContent, [14], ''),
                 CS: this.#getColumnHeaderValue(textContent, [16], ''),
-                CC: this.#getColumnHeaderValue(textContent, [17], ''),
+                CC: Number(this.#getColumnHeaderValue(textContent, [17], '')),
+                FLS: this.#getColumnHeaderValue(textContent, [18], ''),
+                FLSR: this.#getColumnHeaderValue(textContent, [19], ''),
+                FLSS: this.#getColumnHeaderValue(textContent, [20], ''),
             });
         }
     };
@@ -1126,10 +1614,10 @@ class ForestParser {
         if (textContent.search(/уч.л-во/i) > 0) {
             indexTract = textContent.search(/уч.л-во/i) + 8;
             textContent = textContent.slice(indexTract).trim();
-        } else if (textContent.search(this.#forestryDistrict) > 0) {
+        } else if (textContent.search(this.forestryMain) > 0) {
             indexTract =
-                textContent.search(this.#forestryDistrict) +
-                this.#forestryDistrict.length;
+                textContent.search(this.forestryMain) +
+                this.forestryMain.length;
             textContent = textContent.slice(indexTract).trim();
         }
 
@@ -1180,7 +1668,7 @@ class ForestParser {
                 this.#currentKvartal = newKvartal;
                 this.#forestryResult[newKvartal] = {
                     lots: {},
-                    Tract: this.#forestryFile.split('.')[0], //this.#currentForestryTract,
+                    Tract: this.forestryFile.split('.')[0], //this.#currentForestryTract,
                     //PrZone: this.#currentProtectZone
                 };
                 this.#countKvartals++;
@@ -1254,8 +1742,8 @@ class ForestParser {
                     path.resolve(
                         rootPath,
                         this.#toPath,
-                        `${this.#forestryMain}/${
-                            this.#forestryFile.split('.')[0]
+                        `${this.forestryMain}/${
+                            this.forestryFile.split('.')[0]
                         }_logger.json`
                     )
                 )
@@ -1264,8 +1752,8 @@ class ForestParser {
                     path.resolve(
                         rootPath,
                         this.#toPath,
-                        `${this.#forestryMain}/${
-                            this.#forestryFile.split('.')[0]
+                        `${this.forestryMain}/${
+                            this.forestryFile.split('.')[0]
                         }_logger.json`
                     )
                 );
@@ -1281,8 +1769,8 @@ class ForestParser {
                     path.resolve(
                         rootPath,
                         this.#toPath,
-                        `${this.#forestryMain}/${
-                            this.#forestryFile.split('.')[0]
+                        `${this.forestryMain}/${
+                            this.forestryFile.split('.')[0]
                         }_warning.log`
                     )
                 )
@@ -1291,8 +1779,8 @@ class ForestParser {
                     path.resolve(
                         rootPath,
                         this.#toPath,
-                        `${this.#forestryMain}/${
-                            this.#forestryFile.split('.')[0]
+                        `${this.forestryMain}/${
+                            this.forestryFile.split('.')[0]
                         }_warning.log`
                     )
                 );
@@ -1308,8 +1796,8 @@ class ForestParser {
                         path.resolve(
                             rootPath,
                             this.#toPath,
-                            `${this.#forestryMain}/${
-                                this.#forestryFile.split('.')[0]
+                            `${this.forestryMain}/${
+                                this.forestryFile.split('.')[0]
                             }_logger.json`
                         ),
                         JSON.stringify(textContent)
@@ -1324,8 +1812,8 @@ class ForestParser {
                         path.resolve(
                             rootPath,
                             this.#toPath,
-                            `${this.#forestryMain}/${
-                                this.#forestryFile.split('.')[0]
+                            `${this.forestryMain}/${
+                                this.forestryFile.split('.')[0]
                             }_warning.log`
                         ),
                         `${textContent}\n`,
@@ -1348,33 +1836,97 @@ class ForestParser {
             return JSON.parse(jsonString);
         } catch (err) {
             console.log('Header forestry file read failed:', err);
+            this.#forestErrorList.set(
+                'HeaderFile',
+                `Не удалось прочитать файл заголовков таблицы!`
+            );
+
             return [];
         }
     };
 
     // Читаем файл лесничества (по умолчанию с классификатором исходных данных для лесничества - map)
-    #openFileForestry = async (
-        fileName = `${this.#forestryMain}/map.xlsx`,
-        isParseResult = true
-    ) => {
+    #openFileForestry = async (fileName, isParseResult = true) => {
+        let mapFileName = '';
+
         try {
-            console.log(`Читаем файл ${fileName}`);
+            if (fileName) {
+                mapFileName = fileName;
+            } else {
+                if (
+                    fs.existsSync(
+                        path.resolve(
+                            rootPath,
+                            this.#toPath,
+                            `${this.forestryMain}/map.xlsx`
+                        )
+                    )
+                ) {
+                    mapFileName = `${this.forestryMain}/map.xlsx`;
+                } else {
+                    mapFileName = `schema/map.xlsx`;
+                }
+            }
+
+            console.log(`Читаем файл ${mapFileName}`);
 
             return isParseResult
                 ? JSON.parse(
                       await anyReader.getText(
-                          path.resolve(rootPath, this.#toPath, fileName)
+                          path.resolve(rootPath, this.#toPath, mapFileName)
                       )
                   )
                 : await anyReader.getText(
-                      path.resolve(rootPath, this.#toPath, fileName)
+                      path.resolve(rootPath, this.#toPath, mapFileName)
                   );
         } catch (err) {
-            throw new Error(
-                `Не удалось прочитать ${fileName} файл лесничества <${
-                    this.#forestryMain
-                }> по причине:\n ${err.message || '500 error on server'}`
+            // throw new Error(
+            //     `Не удалось прочитать ${fileName} файл лесничества <${
+            //         this.forestryMain
+            //     }> по причине:\n ${err.message || '500 error on server'}`
+            // );
+            if (fileName) {
+                this.#forestErrorList.set(
+                    'ForestryFile',
+                    `Не удалось прочитать ${fileName} файл лесничества <${
+                        this.forestryMain
+                    }> по причине:\n ${err.name || '500 error on server'}`
+                );
+            } else {
+                this.#forestErrorList.set(
+                    'MapFile',
+                    `Не удалось прочитать ${mapFileName} map-файл классификатор лесничеств <${
+                        this.forestryMain
+                    }> по причине:\n ${err.message || '500 error on server'}`
+                );
+            }
+        }
+    };
+
+    // Функция форматирования значения полей БД (символьное и с плавающей запятой) по количеству целой и дробной частей
+    #formatField = (
+        value,
+        type = 'N',
+        intSize = 1,
+        floatSize = 0,
+        isPadding = false
+    ) => {
+        if (!value) value = '';
+
+        if (type === 'N') {
+            return Number(
+                Number(value.toString().replace(',', '.')).toFixed(floatSize)
             );
+            //.toString()
+            //.padStart(isPadding && floatSize == 0 ? intSize + 1 : 0, '0');
+        } else {
+            const newValue = value.toString().trim();
+            return newValue.length > intSize
+                ? newValue.slice(0, intSize)
+                : newValue.padStart(
+                      isPadding ? intSize - newValue.length : 0,
+                      '0'
+                  );
         }
     };
 
@@ -1427,27 +1979,47 @@ class ForestParser {
             console.log(
                 'Открываем БД для записи сведений таксационной карточки'
             );
+            await this.#readFieldsDescription();
+
             return await DBFFile.open(
                 path.resolve(
                     rootPath,
                     this.#toPath,
-                    `${this.#forestryMain}/${this.#forestryMain}.dbf`
+                    `${this.forestryMain}/${this.forestryMain}.dbf`
                 ),
                 { encoding: this.#charset }
             );
-        } catch (e) {
-            console.log(e, 'Произошла ошибка');
-            await this.#readFieldsDescription();
+        } catch (err) {
             console.log('Создаем БД для записи сведений таксационной карточки');
-            return await DBFFile.create(
+            const DBFBase = await DBFFile.create(
                 path.resolve(
                     rootPath,
                     this.#toPath,
-                    `${this.#forestryMain}/${this.#forestryMain}.dbf`
+                    `${this.forestryMain}/${this.forestryMain}.dbf`
                 ),
                 this.#dbFields,
                 { encoding: this.#charset }
             );
+            if (
+                !fs.existsSync(
+                    path.resolve(
+                        rootPath,
+                        this.#toPath,
+                        `${this.forestryMain}/${this.forestryMain}.dbf`
+                    )
+                )
+            ) {
+                this.#forestErrorList.set(
+                    'DBFFileError',
+                    `Не удалось открыть/создать файл базы [${path.resolve(
+                        rootPath,
+                        this.#toPath,
+                        `${this.forestryMain}/${this.forestryMain}.dbf`
+                    )}] по причине ошибка ['${err.name}']`
+                );
+            }
+
+            return DBFBase;
         }
     };
 }

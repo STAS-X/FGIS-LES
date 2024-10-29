@@ -1,9 +1,6 @@
 const Router = require('express');
 const router = new Router();
 
-const { DBFFile } = require('dbffile');
-const { ForestParser } = require('../lib/reader/forestParser.cjs');
-
 // const batchRead = async () => {
 // 	let dbf = await DBFFile.open(path.resolve(__dirname, '../assets/test.dbf'), { encoding: 'UTF-8' });
 // 	console.log(`DBF file contains ${dbf.recordCount} records.`);
@@ -12,35 +9,44 @@ const { ForestParser } = require('../lib/reader/forestParser.cjs');
 // 	for (let record of records) console.log(record, 'Current record of DBF FILE');
 // };
 
-const path = require('path');
-const {
-    tryParseForestryData,
-} = require('../lib/reader/forestryParserFunc.cjs');
-
-const anyReader = require('../lib/reader/anytext.cjs').reader;
-
 router.get('/parse', async (req, res) => {
+    const { DBFFile } = require('dbffile');
+
+    const path = require('path');
+
+    const { ForestParser } = require('../lib/reader/forestParser.cjs');
+    const {
+        tryParseForestryData,
+    } = require('../lib/reader/forestryParserFunc.cjs');
+    const { getAllFilesFromFolder } = require('../lib/helpers/helpers.cjs');
+
+    const anyReader = require('../lib/reader/anytext.cjs').reader;
+
     //await batchRead();
     //console.log(anyReader);
     // anyReader.getText(path.resolve(__dirname, '../assets/TO_Воронское.docx')).then(function (data) {
     // 	tryParseForestryData(data);
     // });
 
+    const fileList = getAllFilesFromFolder(
+        path.resolve(__dirname, '../assets', 'Шуйское')
+    );
+
     let schemaData = '';
 
     const parserOptions = {
         forestryMain: 'Шуйское',
         forestryDistrict: '',
-        forestryTract: 'Палехское',
+        forestryTract: '',
         forestryRegion: 'Ивановская область',
-        forestryFile: '1.docx',
+        forestryFile: '',
         coordSystem: 'msk37Zona1',
         taxerCompany: 'ООО «Лесопроектное бюро»',
         taxerExpedition: 1,
         isParseHeader: true,
     };
 
-    //parser = null;
+    const parser = await new ForestParser(parserOptions)();
 
     anyReader
         .getText(path.resolve(__dirname, '../assets/схема_бд.xlsx'))
@@ -152,10 +158,14 @@ router.get('/parse', async (req, res) => {
             console.log(`${dbRecords.length} records added.`);
             schemaData += '</table>';
             //res.set({ 'content-type': 'text/html; charset=utf-8' })
-            res.send(`<h1>Parser taksoCards!</h1>${schemaData}`);
+            res.end(`<h1>Parser taksoCards!</h1>${schemaData}`);
 
-            const parser = new ForestParser(parserOptions);
-            parser.parseForestry();
+            // Запускаем процедуру парсинга таксационных описаний последовательно по всей папке
+            for (const fName of fileList) {
+                parser.forestryFile = fName;
+                await parser.parseForestry();
+                //break;
+            }
         });
 });
 
