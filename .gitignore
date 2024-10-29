@@ -13,6 +13,8 @@ dist-ssr
 assets
 *.local
 
+!assets/schema/*.*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
