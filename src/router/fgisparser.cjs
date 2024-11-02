@@ -8,45 +8,40 @@ const router = new Router();
 // 	let records = await dbf.readRecords(10); // batch-reads up to 100 records, returned as an array
 // 	for (let record of records) console.log(record, 'Current record of DBF FILE');
 // };
+const fs = require('fs');
+const path = require('path');
+
+let schemaData = '';
+
+const { ForestParser } = require('../lib/reader/forestParser.cjs');
+const {
+    tryParseForestryData,
+} = require('../lib/reader/forestryParserFunc.cjs');
+const { getAllFilesFromFolder } = require('../lib/helpers/helpers.cjs');
+
+const anyReader = require('../lib/reader/anytext.cjs').reader;
+
+const parserOptions = {
+    forestryMain: 'Вичугское',
+    forestryDistrict: '',
+    forestryTract: '',
+    forestryRegion: 'Ивановская область',
+    forestryFile: '',
+    coordSystem: 'msk37Zona1',
+    taxerCompany: 'ООО «Лесопроектное бюро»',
+    taxerExpedition: 1,
+    isParseHeader: true,
+    isParseTitul: false,
+};
 
 router.get('/parse', async (req, res) => {
     const { DBFFile } = require('dbffile');
-
-    const path = require('path');
-
-    const { ForestParser } = require('../lib/reader/forestParser.cjs');
-    const {
-        tryParseForestryData,
-    } = require('../lib/reader/forestryParserFunc.cjs');
-    const { getAllFilesFromFolder } = require('../lib/helpers/helpers.cjs');
-
-    const anyReader = require('../lib/reader/anytext.cjs').reader;
-
+    const parser = await new ForestParser(parserOptions)();
     //await batchRead();
     //console.log(anyReader);
     // anyReader.getText(path.resolve(__dirname, '../assets/TO_Воронское.docx')).then(function (data) {
     // 	tryParseForestryData(data);
     // });
-
-    const fileList = getAllFilesFromFolder(
-        path.resolve(__dirname, '../assets', 'Шуйское')
-    );
-
-    let schemaData = '';
-
-    const parserOptions = {
-        forestryMain: 'Шуйское',
-        forestryDistrict: '',
-        forestryTract: '',
-        forestryRegion: 'Ивановская область',
-        forestryFile: '',
-        coordSystem: 'msk37Zona1',
-        taxerCompany: 'ООО «Лесопроектное бюро»',
-        taxerExpedition: 1,
-        isParseHeader: true,
-    };
-
-    const parser = await new ForestParser(parserOptions)();
 
     anyReader
         .getText(path.resolve(__dirname, '../assets/схема_бд.xlsx'))
@@ -155,18 +150,63 @@ router.get('/parse', async (req, res) => {
             });
 
             //await dbf.appendRecords(dbRecords);
-            console.log(`${dbRecords.length} records added.`);
+            //console.log(`${dbRecords.length} records added.`);
             schemaData += '</table>';
             //res.set({ 'content-type': 'text/html; charset=utf-8' })
             res.end(`<h1>Parser taksoCards!</h1>${schemaData}`);
 
             // Запускаем процедуру парсинга таксационных описаний последовательно по всей папке
+            const fileList = getAllFilesFromFolder(
+                path.resolve(__dirname, '../assets', parserOptions.forestryMain)
+            );
+
             for (const fName of fileList) {
                 parser.forestryFile = fName;
+                parser.foresteryHeader = null;
                 await parser.parseForestry();
                 //break;
             }
         });
+});
+
+router.get('/transform', async (req, res) => {
+    //const parser = await new ForestParser(parserOptions)();
+    // Запускаем процедуру парсинга таксационных описаний последовательно по всей папке
+    const fileList = getAllFilesFromFolder(
+        path.resolve(__dirname, '../assets', parserOptions.forestryMain),
+        { mask: '.pdf' }
+    );
+    console.log(fileList, 'Найдены файлы в дириктории');
+    res.end(`<h1>Transform taksoCards to txt file!</h1>${schemaData}`);
+
+    for (const fName of fileList) {
+        //parser.forestryFile = fName;
+        //await parser.parseForestry();
+        //break;
+        // console.log(fName, 'Найден новый файл');
+        await anyReader
+            .getText(
+                path.resolve(
+                    __dirname,
+                    '../assets',
+                    parserOptions.forestryMain,
+                    fName
+                ),
+                { isTransform: true }
+            )
+            .then((data) => {
+                fs.writeFileSync(
+                    path.resolve(
+                        __dirname,
+                        '../assets',
+                        parserOptions.forestryMain,
+                        `${path.parse(fName).name}.txt`
+                    ),
+                    data
+                );
+                console.log(`Файл ${fName} переформатирован!`);
+            });
+    }
 });
 
 module.exports = { router };
