@@ -2,7 +2,7 @@ const genUniqId = () => {
     return Date.now() + '-' + Math.floor(Math.random() * 1000000000);
 };
 
-const isStringEqual = (st1, st2) => {
+const isStringEqual = (st1 = '', st2 = '') => {
     return st1.toLowerCase().search(st2.toLowerCase());
 };
 

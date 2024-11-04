@@ -22,11 +22,11 @@ const { getAllFilesFromFolder } = require('../lib/helpers/helpers.cjs');
 const anyReader = require('../lib/reader/anytext.cjs').reader;
 
 const parserOptions = {
-    forestryMain: 'Вичугское',
+    forestryMain: 'Южское',
     forestryDistrict: '',
     forestryTract: '',
     forestryRegion: 'Ивановская область',
-    forestryFile: '',
+    forestryFile: '17-1.docx',
     coordSystem: 'msk37Zona1',
     taxerCompany: 'ООО «Лесопроектное бюро»',
     taxerExpedition: 1,
@@ -156,15 +156,25 @@ router.get('/parse', async (req, res) => {
             res.end(`<h1>Parser taksoCards!</h1>${schemaData}`);
 
             // Запускаем процедуру парсинга таксационных описаний последовательно по всей папке
-            const fileList = getAllFilesFromFolder(
-                path.resolve(__dirname, '../assets', parserOptions.forestryMain)
-            );
+            if (!parserOptions.forestryFile) {
+                const fileList = getAllFilesFromFolder(
+                    path.resolve(
+                        __dirname,
+                        '../assets',
+                        parserOptions.forestryMain
+                    )
+                );
 
-            for (const fName of fileList) {
-                parser.forestryFile = fName;
-                parser.foresteryHeader = null;
+                for (const fName of fileList) {
+                    parser.forestryFile = fName;
+                    //parser.foresteryHeader = null;
+                    await parser.parseForestry();
+                    //break;
+                }
+            } else {
+                parser.forestryFile = parserOptions.forestryFile;
+                //parser.foresteryHeader = null;
                 await parser.parseForestry();
-                //break;
             }
         });
 });
