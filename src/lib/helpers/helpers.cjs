@@ -2,7 +2,8 @@ const genUniqId = () => {
     return Date.now() + '-' + Math.floor(Math.random() * 1000000000);
 };
 
-const isStringEqual = (st1, st2) => {
+const isStringEqual = (st1 = '', st2 = '') => {
+    if (!st1 || !st2) return -1;
     return st1.toLowerCase().search(st2.toLowerCase());
 };
 
@@ -21,8 +22,12 @@ const getAllFilesFromFolder = (dirName, options = {}) => {
             if (stat && stat.isDirectory() && isRecursion) {
                 listDirForFiles(file);
             } else {
+                //console.log(path.parse(file).ext, 'Новое расширение');
                 if (
-                    mask.split('|').includes(path.parse(file).ext.toLowerCase())
+                    mask
+                        .toLowerCase()
+                        .split('|')
+                        .includes(path.parse(file).ext.toLowerCase())
                 ) {
                     console.log(
                         `Добавлена новая карта таксационного описания: [${
