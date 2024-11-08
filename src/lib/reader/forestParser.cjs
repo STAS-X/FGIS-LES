@@ -32,6 +32,7 @@ const lotAdditionalData = [
     { value: 'Класс пожарной опасности ', isElement: true },
     { value: 'подлесок ', isElement: true },
     { value: 'Склон ', isElement: true },
+    { value: 'Склон ', isElement: true },
     { value: 'подрост ', isElement: true },
     { value: 'культуры |культуры-', isElement: true },
     { value: 'повреждение ', isElement: true },
@@ -110,12 +111,18 @@ const lotExtraLandType = [
         code: '1101',
     },
     { value: 'Погибшее', type: 'лесные земли', tier: 30, code: '1504' },
+    { value: 'Погибшее', type: 'лесные земли', tier: 30, code: '1504' },
     { value: 'Пастбище, выгон|Пастбище', type: 'нелесные земли', code: '2103' },
     {
         value: 'УЧ-КИ ЛЕСА ВОКР НАСЕЛ.ПУНКТОВ',
         type: 'нелесные земли',
         short: 'Уч.леса н.п.',
         code: '2544',
+    },
+    {
+        value: 'Кордоны',
+        type: 'нелесные земли',
+        code: '2402',
     },
     {
         value: 'Кордоны',
@@ -300,6 +307,7 @@ const lotExtraLandType = [
         short: 'Вырубка',
         type: 'лесные земли',
         isPreview: true,
+        isPreview: true,
         tier: 1,
         code: '1509',
     },
@@ -429,13 +437,13 @@ const lotExtraLandType = [
         code: '2548',
     },
     // Добавляем промежуточное описание культур для интерпретации первичных названий лесных земель, с целью дальнейшего уточнения
-    // {
-    //     value: 'Культ|Насажд',
-    //     type: 'лесные земли',
-    //     isPreview: true,
-    //     tier: 1,
-    //     code: '1101',
-    // },
+    // // {
+    // //     value: 'Культ|Насажд',
+    // //     type: 'лесные земли',
+    // //     isPreview: true,
+    // //     tier: 1,
+    // //     code: '1101',
+    // // },
 ];
 
 class ForestParser {
@@ -595,6 +603,8 @@ class ForestParser {
             console.log(
                 `Ошибка парсинга [${this.#forestErrorList.size}] в выделе [${
                     this.#currentLot
+                }] квартала [${this.#currentKvartal}]  в выделе [${
+                    this.#currentLot
                 }] квартала [${this.#currentKvartal}] `,
                 `${err.message}\n${err.stack}`
             );
@@ -699,9 +709,11 @@ class ForestParser {
             // Если мы распарсили кварталы и выдела, то пытаемся прочитать информацию и вставиьт ее в базу
             for (const kvartal of Object.keys(this.#forestryResult)) {
                 this.#currentKvartal = kvartal;
+                this.#currentKvartal = kvartal;
                 for (const lot of Object.keys(
                     this.#forestryResult[kvartal].lots
                 )) {
+                    this.#currentLot = lot;
                     this.#currentLot = lot;
                     const currentLot = this.#forestryResult[kvartal].lots[lot];
                     // if (!currentLot['compositions'][0]?.['LCODE'])
@@ -1661,10 +1673,19 @@ class ForestParser {
                             }`,
                             true
                         );
+                        // console.log(
+                        //     this.#currentLandName,
+                        //     ' - ',
+                        //     newLandName,
+                        //     ' - ',
+                        //     newCategory.landName,
+                        //     'Проверка на категорию земель'
+                        // );
                         landName = newCategory.landName;
                         landType = newCategory.landType;
                         compositionType = newCategory.compositionType;
                         landCode = newCategory.landCode;
+                        isNewCategory = false;
                         isNewCategory = false;
                     }
 
@@ -1679,7 +1700,9 @@ class ForestParser {
                             textContent,
                             ['2-22'],
                             ''
-                        ).trim();
+                        )
+                            .trim()
+                            .trim();
 
                         if (fullLandName.trim().indexOf('  ') > -1) {
                             landName = fullLandName.split('  ')[0].trim();
@@ -1694,7 +1717,6 @@ class ForestParser {
                             : '' + landName;
 
                         if (compositions.length == 0) {
-                            compositions.push({});
                             compositions['additions'] = [];
                         }
 
@@ -1766,7 +1788,11 @@ class ForestParser {
                     let { isAdditional, name, value } =
                         this.#checkForLotAdditional(
                             this.#getColumnHeaderValue(
-                                textContent,
+                                this.#getColumnHeaderValue(
+                                    textContent,
+                                    ['2-23'],
+                                    ''
+                                ),
                                 ['2-23'],
                                 ''
                             )
@@ -1891,6 +1917,34 @@ class ForestParser {
                                     .trim();
                             }
 
+                            // if (this.#currentLandName.indexOf('Склад') > -1)
+                            //     console.log(
+                            //         `[${textContent}]`,
+                            //         `[${this.#getColumnHeaderValue(
+                            //             textContent,
+                            //             ['2-22'],
+                            //             ''
+                            //         )}]`,
+                            //         'Обрубаем дополнение'
+                            //     );
+                            textContent = this.#getColumnHeaderValue(
+                                textContent,
+                                ['2-22'],
+                                ''
+                            );
+                            // Если в добавке к дополнеию присутствует 2 пробела, то это вероятно часть от наименования категории земель - добавляем ее в текущее описание
+                            if (
+                                textContent.indexOf('  ') > -1 &&
+                                (textContent[0].trim() || textContent[1].trim())
+                            ) {
+                                lotCompositions[lotCompositions.length - 1][
+                                    'LN'
+                                ] += ` ${textContent.split('  ')[0].trim()}`;
+                                textContent = textContent
+                                    .slice(textContent.indexOf('  ') + 2)
+                                    .trim();
+                            }
+
                             const lastAddition =
                                 lotAdditions[lotAdditions.length - 1];
                             if (lastAddition.value)
@@ -1961,7 +2015,7 @@ class ForestParser {
                                       )
                                   )
                                 : this.#checkForLandCategory(
-                                      currentComposition['LN']
+                                      currentComposition['LN'] || 'ТЕСТ'
                                   ).landTier;
 
                         currentComposition['FLH'] = Number(
@@ -1976,6 +2030,7 @@ class ForestParser {
                         currentComposition['AC'] =
                             this.#getColumnHeaderValue(textContent, [9], '') ||
                             currentComposition['AC'] ||
+                            0 ||
                             0;
 
                         currentComposition['AG'] = Number(
@@ -2259,6 +2314,7 @@ class ForestParser {
     #checkForLandCategory = (landCategory, logWarning = false) => {
         let hasAdditional = false;
         landCategory = landCategory.trim();
+        landCategory = landCategory.trim();
 
         const result = {
             landName: 'Естественное происхождение',
@@ -2313,9 +2369,20 @@ class ForestParser {
                                     isStringEqual(landCategory, landTypeItem) ==
                                         0
                                 ) {
-                                    result['landName'] = item.isPreview
-                                        ? landCategory
-                                        : landTypeItem;
+                                    // if (
+                                    //     this.#currentKvartal == 14 &&
+                                    //     this.#currentLot == 2
+                                    // )
+                                    //     console.log(landTypeItem, landCategory);
+                                    if (item.isPreview)
+                                        // console.log(
+                                        //     landCategory,
+                                        //     landTypeItem,
+                                        //     'Превью для категории земель'
+                                        // );
+                                        result['landName'] = item.isPreview
+                                            ? landCategory
+                                            : landTypeItem;
                                     result['landType'] = item.type;
                                     result['landTier'] = item.tier;
                                     result['landCode'] = item.code;
@@ -2328,6 +2395,13 @@ class ForestParser {
                             }) > -1
                     );
                 });
+                // if (this.#currentKvartal == 14 && this.#currentLot == 2)
+                //     console.log(
+                //         landCategory,
+                //         landExtraIndex,
+                //         result,
+                //         'Текущая категория культур'
+                //     );
 
                 if (landExtraIndex < 0) {
                     result['landName'] = landCategory;
@@ -2705,18 +2779,22 @@ class ForestParser {
                 ).koeff,
                 CA:
                     Number(this.#getColumnHeaderValue(textContent, [6], '')) ||
+                    0 ||
                     0,
                 CH:
                     Number(this.#getColumnHeaderValue(textContent, [7], '')) ||
+                    0 ||
                     0,
                 CD:
                     Number(this.#getColumnHeaderValue(textContent, [8], '')) ||
+                    0 ||
                     0,
                 FFN: this.#getColumnHeaderValue(textContent, [13], ''),
                 FR: this.#getColumnHeaderValue(textContent, [14], ''),
                 CS: this.#getColumnHeaderValue(textContent, [16], ''),
                 CC:
                     Number(this.#getColumnHeaderValue(textContent, [17], '')) ||
+                    0 ||
                     0,
                 FLS: this.#getColumnHeaderValue(textContent, [18], ''),
                 FLSR: this.#getColumnHeaderValue(textContent, [19], ''),
@@ -2767,6 +2845,7 @@ class ForestParser {
             textContent.search(/Целевое назн/i) > -1
         ) {
             this.#currentStep = searchStep.stepKvartal;
+            this.#currentStep = searchStep.stepKvartal;
             const searchCategory =
                 textContent.search(/Категория защ/i) > -1
                     ? /Категория защ/i
@@ -2777,6 +2856,7 @@ class ForestParser {
             if (
                 textContent.search(searchCategory) > 1 &&
                 !this.#forestryTract &&
+                this.#isParseTitul &&
                 this.#isParseTitul
             ) {
                 this.#forestryTract = textContent
@@ -2802,6 +2882,7 @@ class ForestParser {
             this.#currentProtectZone = textContent
                 .slice(0, textContent.search(/Квартал /i))
                 .trim();
+            // Если не находит указание на защитную категорию считаем, что пере кварталом уже указана защитая категория
         }
         // console.log(
         //     this.#currentKvartal,
@@ -2810,6 +2891,7 @@ class ForestParser {
         //     'Мы на квартале!!!'
         // );
         if (textContent.search(/Квартал /i) > -1) {
+            this.#currentStep = searchStep.stepFeature;
             this.#currentStep = searchStep.stepFeature;
             newKvartal = Number(
                 textContent.slice(textContent.search(/Квартал /i) + 8)
@@ -3073,6 +3155,7 @@ class ForestParser {
             if (fileName) {
                 mapFileName = fileName;
                 console.log(`Читаем файл ${mapFileName}`);
+                console.log(`Читаем файл ${mapFileName}`);
             } else {
                 if (
                     fs.existsSync(
@@ -3087,6 +3170,7 @@ class ForestParser {
                 } else {
                     mapFileName = `schema/map.xlsx`;
                 }
+                console.log(`Читаем map файл ${mapFileName}`);
                 console.log(`Читаем map файл ${mapFileName}`);
             }
 
@@ -3228,6 +3312,7 @@ class ForestParser {
                 { encoding: this.#charset }
             );
         } catch (err) {
+            //console.log(this.#dbFields, err, 'Считанная схема map файла');
             //console.log(this.#dbFields, err, 'Считанная схема map файла');
             this.#forestErrorList.set(
                 'DBFFileError',
