@@ -4,7 +4,7 @@ const genUniqId = () => {
 
 const isStringEqual = (st1 = '', st2 = '') => {
     if (!st1 || !st2) return -1;
-    return st1.toLowerCase().search(st2.toLowerCase());
+    return st1.toLowerCase().indexOf(st2.toLowerCase());
 };
 
 const getAllFilesFromFolder = (dirName, options = {}) => {

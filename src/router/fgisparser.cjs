@@ -22,11 +22,11 @@ const { getAllFilesFromFolder } = require('../lib/helpers/helpers.cjs');
 const anyReader = require('../lib/reader/anytext.cjs').reader;
 
 const parserOptions = {
-    forestryMain: 'Вичугское',
+    forestryMain: 'Тейковское',
     forestryDistrict: '',
     forestryTract: '',
     forestryRegion: 'Ивановская область',
-    forestryFile: '17-1.docx',
+    forestryFile: '',
     coordSystem: 'msk37Zona1',
     taxerCompany: 'ООО «Лесопроектное бюро»',
     taxerExpedition: 1,
