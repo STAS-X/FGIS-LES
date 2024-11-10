@@ -1,0 +1,5 @@
+build
+
+*.html
+src/*.html
+src/**/*.html

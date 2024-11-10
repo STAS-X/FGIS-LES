@@ -36,17 +36,115 @@ const lotAdditionalData = [
     { value: 'подрост ', isElement: true },
     { value: 'культуры |культуры-', isElement: true },
     { value: 'повреждение ', isElement: true },
-    { value: 'год создания л/к ', isElement: true },
+    { value: 'год создания л/к ', name: 'культуры ', isElement: false },
     { value: 'год вырубки ', isElement: true },
     { value: 'Рекреац.хар-ка ', isElement: true },
     { value: 'селекционная оценка ', isElement: true },
+    { value: 'повреждения насаждения', isElement: true },
     { value: 'ОЗУ ', isElement: true },
     {
-        value: 'ТЛУ ВАРЬИРУЕТ|ТИП ЛЕСА |НАСАЖДЕНИЕ |СОСТАВ |ПОЛНОТА |РЕКОМЕНД.|РЕКОМ.К|РЕКОМЕНДАЦИИ|ПРОВЕДЕНО СОД|ПЛС.ВДОЛЬ |В ВЫДЕЛЕ ',
+        value: 'ТЛУ ВАРЬИРУЕТ|ТИП ЛЕСА |НАСАЖДЕНИЕ |ВЫСОТА |ДИАМЕТР |ТИП ЛЕСА |ПЛОЩАДЬ |БОНИТЕТ |СОСТАВ |ПОЛНОТА |РЕКОМЕНД.|РЕКОМ.К|РЕКОМЕНДАЦИИ|ПРОВЕДЕНО СОД|ПЛС.ВДОЛЬ |В ВЫДЕЛЕ ',
         name: 'состав ',
         isElement: false,
     },
     { value: 'ЛЕСОХОЗЯЙСТВЕHHАЯ', name: 'хар-ка ', isElement: false },
+];
+
+const lotActivities = [
+    {
+        mask: 'добр.*выб.*руб.*',
+        code: 1260,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'прох.*оч.*',
+        code: 1440,
+        isCodeModify: true,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'прореж.*оч.*',
+        code: 1430,
+        isCodeModify: true,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'прочист.*оч.*',
+        code: 1420,
+        isCodeModify: true,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'расчистка',
+        code: 4301,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'разрубка',
+        code: 1845,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'сплош.*сан.*руб.*',
+        code: 1601,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'сплош.*руб.*',
+        code: 1211,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'постеп.*руб.*',
+        code: 1212,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'ест.*лесов.*',
+        code: 3285,
+        hasValue: false,
+        hasRtk: false,
+    },
+    {
+        mask: 'иск.*лесов.*',
+        code: 3222,
+        hasValue: false,
+        hasRtk: false,
+    },
+    {
+        mask: 'допол.*культ.*',
+        code: 3281,
+        hasValue: false,
+        hasRtk: false,
+    },
+    {
+        mask: 'созд.*мин.*пол.*',
+        code: 6233,
+        hasValue: false,
+        hasRtk: false,
+    },
+    {
+        mask: 'освет.*оч.*',
+        code: 1410,
+        isCodeModify: true,
+        hasValue: false,
+        hasRtk: false,
+    },
+    {
+        mask: 'агротех.*уход.*',
+        code: 3261,
+        hasValue: false,
+        hasRtk: false,
+    },
 ];
 
 const lotProtectZoneOzu = [
@@ -82,15 +180,18 @@ const lotExtraProtectZone = [
     { name: 'Зеленые зоны', code: 131802 },
     { name: 'Лесопарковые зоны', code: 131801 },
     {
-        name: 'Леса расположенные в водоохранных зонах|Запретные полосы вдоль водных объектов|Леса водоохранных зон',
+        name: 'Леса расположенные в водоохранных зонах|Запретные полосы вдоль водных объектов|Леса водоохранных зон|леса, расположен. в водоохранных зонах',
         code: 110201,
     },
-    { name: 'ЗАПР.ПОЛ.ЛЕС.ВДОЛЬ ВОД.ОБЪЕКТ.', code: 110100 },
+    {
+        name: 'ЗАПР.ПОЛ.ЛЕС.ВДОЛЬ ВОД.ОБЪЕКТ.|запрет. пол. лесов, расп. вдоль вод. об.',
+        code: 110100,
+    },
     { name: 'ЛЕСА,РАСПОЛ.В ЗАЩ.ПОЛОС.ЛЕСОВ', code: 120800 },
 
     {
-        name: 'Защитные полосы вдоль дорог|Защитн.полосы вдоль ж/д и а/д|Защитные полосы вдоль авт. и жел. дорог|Защитные полосы лесов, расп-е вдоль  ж/д путей  и а/д',
-        code: 130000,
+        name: 'Защитные полосы вдоль дорог|Защитн.полосы вдоль ж/д и а/д|защит.полосы лесов, расп. вд. ж/д и а/д|Защитные полосы вдоль авт. и жел. дорог|Защитные полосы лесов, расп-е вдоль  ж/д путей  и а/д',
+        code: 120800,
     },
     { name: 'Эксплуатационные леса', code: 204100 },
     { name: 'Защ. пол. лесов, расп.вд жел. пут. общ. пол', code: 133100 },
@@ -212,6 +313,7 @@ const lotExtraLandType = [
         value: 'Культуры н/с|Культуры несомкнувшиеся|Несомкнувшиеся л/к|Несомкнувш.л/к|несомкнувшиеся культуры',
         short: 'Культуры н/с',
         type: 'лесные земли',
+        hasMR: true,
         code: '1201',
     },
     {
@@ -252,8 +354,9 @@ const lotExtraLandType = [
         value: 'Прогалина',
         type: 'лесные земли',
         isPreview: true,
+        hasMR: true,
         tier: 1,
-        code: '1503',
+        code: '1510',
     },
     {
         value: 'Культуры с культурами под пологом|Насажд.с л/к под пол.|культуры под пологом',
@@ -302,6 +405,7 @@ const lotExtraLandType = [
         short: 'Вырубка',
         type: 'лесные земли',
         isPreview: true,
+        hasMR: true,
         tier: 1,
         code: '1509',
     },
@@ -322,12 +426,14 @@ const lotExtraLandType = [
         value: 'Насаждение погибшее',
         short: 'Насаждение погиб.',
         type: 'лесные земли',
+        hasMR: true,
         code: '1504',
     },
     {
         value: 'Гарь',
         type: 'лесные земли',
-        code: '2560',
+        hasMR: true,
+        code: '1503',
     },
     {
         value: 'Поляна для отдыха',
@@ -368,13 +474,13 @@ const lotExtraLandType = [
         value: 'Дорога автомоб. грунтовые|Дорога автом.грунтовая|Автомобильная дорога',
         short: 'Дорога грунт.',
         type: 'нелесные земли',
-        code: '1001',
+        code: '2303',
     },
     {
         value: 'Дорога лесная|Дорога',
         short: 'Дорога лесная',
         type: 'нелесные земли',
-        code: '1001',
+        code: '2308',
     },
     {
         value: 'Канал',
@@ -414,9 +520,19 @@ const lotExtraLandType = [
         code: '2507',
     },
     {
-        value: 'Река|Ручей|Пруд',
+        value: 'Река',
         type: 'нелесные земли',
         code: '2109',
+    },
+    {
+        value: 'Ручей',
+        type: 'нелесные земли',
+        code: '2110',
+    },
+    {
+        value: 'Пруд',
+        type: 'нелесные земли',
+        code: '2111',
     },
     {
         value: 'Просека квартальная|Просеки квартальные|Просека квартал',
@@ -480,6 +596,7 @@ class ForestParser {
     #noAdditional = null;
     #noProtectZone = null;
     #noProtectZoneOzu = null;
+    #noActivities = null;
     #forestErrorList = new Map();
 
     #countLots = 0;
@@ -501,7 +618,7 @@ class ForestParser {
 
     #toPath = 'src/assets';
 
-    #charset = '866'; //'UTF-8';
+    #charset = 'UTF-8';
 
     constructor(options = {}) {
         //super();
@@ -516,6 +633,8 @@ class ForestParser {
         this.#taxerExpedition = options.taxerExpedition;
         this.#isParseHeader = !!options.isParseHeader;
         this.#isParseTitul = !!options.isParseTitul;
+
+        this.#charset = options.charset || this.#charset;
 
         return async () => {
             // Запускаем функцию инициализации исходных данных для дальнейшего использовани при парсинге таксационной карты
@@ -641,6 +760,7 @@ class ForestParser {
         this.#noAdditional = new Set();
         this.#noProtectZone = new Set();
         this.#noProtectZoneOzu = new Set();
+        this.#noActivities = new Set();
         this.#forestErrorList = new Map();
 
         this.#forestryResult = {};
@@ -747,11 +867,26 @@ class ForestParser {
                         UD: Number(
                             currentLot['FP_CODE'].toString().slice(0, 2)
                         ),
+                        MR: this.#formatValueByField(
+                            this.#getMrOrVmrComposition(
+                                currentLot['compositions'],
+                                'MR'
+                            ),
+                            'MR'
+                        ),
+                        VMR: this.#formatValueByField(
+                            this.#getMrOrVmrComposition(
+                                currentLot['compositions']
+                            ),
+                            'VMR'
+                        ),
                         AKTM: this.#actualYear ? Number(this.#actualYear) : 0,
                         KV: Number(kvartal),
-                        ZK: Number(currentLot['compositions'][0]?.['LCODE']),
+                        ZK: Number(
+                            this.#getLandCodeByVMR(currentLot['compositions'])
+                        ),
                         ZKG: Number(
-                            currentLot['compositions'][0]?.['LCODE']
+                            this.#getLandCodeByVMR(currentLot['compositions'])
                                 .toString()
                                 .slice(0, 2)
                         ),
@@ -782,9 +917,11 @@ class ForestParser {
                                 'Естественное происхождение'
                         ).slice(0, 24),
                         // Добавляем информацию по составу пород выдела и каждой породе в отдельности
-                        ...this.#parseCompositioToDBF(currentLot),
+                        ...this.#parseCompositionToDBF(currentLot),
                         // Добавляем описание дополнений для каждого выдела
                         ...this.#parseCompositionAdditional(currentLot),
+                        // Добавляем описание хозяйственных мероприятий
+                        ...this.#parseCompositionActivities(currentLot),
                     });
 
                     // Проверяем корректность заполнения TLU
@@ -824,8 +961,89 @@ class ForestParser {
         }
     };
 
+    // Функция добавления описания хозяйственных мероприятий
+    #parseCompositionActivities = (currentLot) => {
+        let newActivity = false;
+        let hasValue = false;
+        let hasRtk = false;
+        let activityNum = 0;
+        let activityCode = 0;
+        const activities = currentLot['FA'] || [];
+        const resultActivity = {};
+
+        if (activities && activities.length > 0) {
+            for (let activity of activities) {
+                activity = activity.toLowerCase().trim();
+                //console.log(resultActivity, 'Текущее мероприятие');
+                if (newActivity) {
+                    if (hasValue && activity.indexOf('%') > -1) {
+                        resultActivity[`UP${activityNum}P`] = Number(
+                            activity.match(/\d+/g)?.[0] || 0
+                        );
+
+                        hasValue = false;
+                        continue;
+                    }
+                    if (hasRtk && activity.indexOf('ртк') > -1) {
+                        resultActivity[`PTK${activityNum}`] = Number(
+                            activity.match(/\d+/g)?.[0] || 1
+                        );
+                        hasRtk = false;
+                        continue;
+                    }
+                    newActivity = hasValue = hasRtk = false;
+                }
+
+                if (!newActivity)
+                    lotActivities.every((lotActivity) => {
+                        newActivity = activity.search(lotActivity.mask) > -1;
+
+                        if (newActivity) {
+                            ++activityNum;
+                            // console.log(
+                            //     activity,
+                            //     lotActivity.mask,
+                            //     activityNum,
+                            //     'Новое мероприятие'
+                            // );
+                            hasValue = !!lotActivity.hasValue;
+                            hasRtk = !!lotActivity.hasRtk;
+                            activityCode = lotActivity.code;
+                            if (
+                                !!lotActivity.isCodeModify &&
+                                activity.match(/\d+/g)
+                            )
+                                activityCode += Number(
+                                    activity.match(/\d+/g)[0]
+                                );
+                            resultActivity[`UP${activityNum}`] =
+                                Number(activityCode);
+                        }
+                        return !newActivity;
+                    });
+                // Если не удалось распарсить хозяйственное мероприятие - добавляем его в warnings
+                if (
+                    !newActivity &&
+                    activity &&
+                    activity.indexOf('%') < 0 &&
+                    activity.indexOf('ртк') < 0 &&
+                    !this.#noActivities.has(activity)
+                ) {
+                    this.#noActivities.add(activity);
+                    this.#messagerForestry.warningMessages(
+                        `Не удалось распарсить категорию хозяйственных мерприятий [${activity}] для выдела ${
+                            this.#currentLot
+                        } в квартале ${this.#currentKvartal}`
+                    );
+                }
+            }
+        }
+
+        return resultActivity;
+    };
+
     // Формирует значения колонок по превалирующей породе, бонитете, сведения по выдеу в целом и по каждой пароде в частности
-    #parseCompositioToDBF = (currentLot) => {
+    #parseCompositionToDBF = (currentLot) => {
         const compositionResult = {};
         let hasTLU = false;
         let compositionNum = 1;
@@ -843,12 +1061,6 @@ class ForestParser {
                 compositionResult['BON'] = this.#formatValueByField(
                     composition['FB'],
                     'BON'
-                );
-                compositionResult['VMR'] = this.#formatValueByField(
-                    composition['detailes'][0]['CN'] !== '-'
-                        ? composition['detailes'][0]['CN']
-                        : '',
-                    'VMR'
                 );
                 compositionResult['USEK'] = this.#formatValueByField(
                     this.#getUsekNumberByComposition(
@@ -947,7 +1159,7 @@ class ForestParser {
                         this.#formatValueByField(0, `SPS${compositionNum}`);
                     compositionResult[`TUR1H${compositionNum}`] =
                         this.#formatValueByField(
-                            detail['CS'] || detail['FLSR'],
+                            Number(detail['FR']) * 10,
                             `TUR1H${compositionNum}`
                         );
                     compositionNum++;
@@ -970,6 +1182,7 @@ class ForestParser {
                 let cValue = '';
                 let cType = '';
                 let dNum = 1;
+                let maketIndex = 1;
                 let maket = [];
                 //console.log(addition);
                 // Проходимся по всем дополнениям и пытаемся записать сведения в соответствующие колонки БД
@@ -979,10 +1192,10 @@ class ForestParser {
                         cValue = addition.value.toLowerCase();
                         cType =
                             cValue.toLowerCase().search('редкий') > -1
-                                ? 3
+                                ? 1
                                 : cValue.toLowerCase().search('средний') > -1
                                 ? 2
-                                : 1;
+                                : 3;
                         additionResult['STG32'] = cType;
                         if (cPart)
                             cPart.forEach((part, index) => {
@@ -1042,12 +1255,31 @@ class ForestParser {
                         makets.push({});
                         maket = makets[makets.length - 1];
                         maket[`M${makets.length}`] = 26;
-                        if (addition.value == 'HОРМАЛЬHЫЕ') {
-                            maket[`DM${makets.length}1`] = '2';
-                        } else {
+                        cValue = addition.value.toLowerCase();
+                        if (cValue.indexOf('минус') > -1) {
                             maket[`DM${makets.length}1`] = '1';
-                        }
+                        } else if (cValue.indexOf('нормальные') > -1) {
+                            maket[`DM${makets.length}1`] = '2';
+                        } else if (cValue.indexOf('плюс') > -1)
+                            maket[`DM${makets.length}1`] = '3';
+                        else maket[`DM${makets.length}1`] = '4';
+
                         break;
+                    // case 'повреждения насаждения':
+                    //     makets.push({});
+                    //     maket = makets[makets.length - 1];
+                    //     maket[`M${makets.length}`] = 12;
+                    //     cValue = addition.value.toLowerCase();
+
+                    //     if (cValue.indexOf('минус') > -1) {
+                    //         maket[`DM${makets.length}1`] = '1';
+                    //     } else if (cValue.indexOf('нормальные') > -1) {
+                    //         maket[`DM${makets.length}1`] = '2';
+                    //     } else if (cValue.indexOf('плюс') > -1)
+                    //         maket[`DM${makets.length}1`] = '3';
+                    //     else maket[`DM${makets.length}1`] = '4';
+
+                    //     break;
                     case 'год вырубки':
                         //console.log(`${cValue}`, 'Парсим вырубку с пнями!');
                         cValue = addition.value.toLowerCase();
@@ -1105,16 +1337,16 @@ class ForestParser {
                                 'DP'
                             )
                         );
-                        // Задаем целевую попроду, если мы на вырубках пеньков
-                        const mainDetaile =
-                            currentLot['compositions'][0]['detailes']?.[0];
-                        if (mainDetaile?.['CN'] !== '-')
-                            additionResult['MR'] = this.#formatValueByField(
-                                currentLot['compositions'][0]['detailes'][0][
-                                    'CN'
-                                ],
-                                'MR'
-                            );
+                        // // Задаем целевую попроду, если мы на вырубках пеньков
+                        // const mainDetaile =
+                        //     currentLot['compositions'][0]['detailes']?.[0];
+                        // if (mainDetaile?.['CN'] !== '-')
+                        //     additionResult['MR'] = this.#formatValueByField(
+                        //         currentLot['compositions'][0]['detailes'][0][
+                        //             'CN'
+                        //         ],
+                        //         'MR'
+                        //     );
                         break;
                     case 'ОЗУ':
                         // Парсим ОЗУ-шки
@@ -1124,58 +1356,367 @@ class ForestParser {
                             'SKP'
                         );
                         break;
-                    case 'год создания л/к':
-                    case 'культуры':
-                    case 'культуры-':
-                        // Макет Культуры - 11, Особенности - 23
+                    case 'состав':
+                        // Макет Особенности - 23
+                        maket = makets.find((maketItem, index) => {
+                            maketIndex = index + 1;
+                            dNum = Object.keys(maketItem).length;
+                            return maketItem[`M${maketIndex}`] == 23;
+                        });
+                        if (!maket) {
+                            makets.push({});
+                            maket = makets[makets.length - 1];
+                            maketIndex = makets.length;
+                            maket[`M${maketIndex}`] = 23;
+                            dNum = 1;
+                        }
+
+                        cValue = addition.value.toLowerCase();
+                        if (cValue.search('состав +неоднородный') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '1';
+
+                            ++dNum;
+                        }
+                        if (cValue.search('полнота +неравномерна') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '2';
+                            ++dNum;
+                        }
+                        if (
+                            cValue.indexOf('насажден') > -1 &&
+                            cValue.indexOf('рубк') > -1
+                        ) {
+                            maket[`DM${maketIndex}${dNum}`] = '3';
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('размещение') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '4';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('заболоч') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '5';
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('затоп') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '6';
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('осушен') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '7';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('прокаш') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '8';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('скот') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '9';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('разновозраст') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '10';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('куртинный') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '11';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('высота') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '12';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('диаметр') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '13';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('куртинная') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '14';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('семенн') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '15';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('порослев') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '16';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('склон') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '17';
+
+                            ++dNum;
+                        }
+                        if (
+                            cValue.indexOf('тип') > -1 &&
+                            cValue.indexOf('леса') > -1
+                        ) {
+                            maket[`DM${maketIndex}${dNum}`] = '19';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('хозвозд') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '20';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('создания') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '21';
+
+                            ++dNum;
+                        }
+                        if (cValue.search('бонитет +по') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '22';
+
+                            ++dNum;
+                        }
+                        if (cValue.search('боните +вар') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '25';
+
+                            ++dNum;
+                        }
+                        if (cValue.search('состав +и +полнота') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '26';
+
+                            ++dNum;
+                        }
+                        if (cValue.search('неоднороден +по') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '27';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('водоохран') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '29';
+
+                            ++dNum;
+                        }
+                        if (cValue.indexOf('березов') > -1) {
+                            maket[`DM${maketIndex}${dNum}`] = '30';
+
+                            ++dNum;
+                        }
+
+                        break;
+                    case 'Класс пожарной опасности':
+                        // Дополнение в макет Особенности - 23
+                        maket = makets.find((maketItem, index) => {
+                            maketIndex = index + 1;
+                            return maketItem[`M${maketIndex}`] == 23;
+                        });
+                        if (!maket) {
+                            makets.push({});
+                            maket = makets[makets.length - 1];
+                            maketIndex = makets.length;
+                            maket[`M${maketIndex}`] = 23;
+                        }
+
+                        cValue = Number(addition.value) + 170;
+                        maket[`DM${maketIndex}${Object.keys(maket).length}`] =
+                            this.#formatValueByField(
+                                cValue,
+                                `DM${maketIndex}${Object.keys(maket).length}`
+                            );
+
+                        break;
+                    case 'повреждение':
+                    case 'повреждения насаждения':
+                        // Макет Вредители - 12
                         makets.push({});
                         maket = makets[makets.length - 1];
-                        maket[`M${makets.length}`] = 11;
+                        maketIndex = makets.length;
+                        maket[`M${maketIndex}`] = 12;
                         cValue = addition.value.toLowerCase();
 
-                        // console.log(
-                        //     cValue,
-                        //     cValue.match(/(?:\b|-?)\d+(?=,?|г?| +)/g)?.[0],
-                        //     'Год вырубки не найден'
-                        // );
+                        maket[`DM${maketIndex}1`] = this.#formatValueByField(
+                            cValue.indexOf('пожар') > -1
+                                ? 1
+                                : cValue.indexOf('болезн')
+                                ? 11
+                                : cValue.indexOf('вредител')
+                                ? 12
+                                : 13,
+                            `DM${maketIndex}1`
+                        );
+
+                        if (cValue.match(/\d{2,4}/g))
+                            maket[`DM${maketIndex}2`] =
+                                cValue.match(/\d{2,4}/g)[0];
+
+                        // Оставлю макет на доработку
+                        break;
+
+                    case 'культуры':
+                    case 'культуры-':
+                        // Макет Культуры - 11
+                        makets.push({});
+                        maket = makets[makets.length - 1];
+                        maketIndex = makets.length;
+
+                        maket[`M${maketIndex}`] = 11;
+
+                        cValue = addition.value.toLowerCase();
                         if (cValue.match(/(?:\b|-?)\d+(?=,?|г?| +)/g)) {
                             const cultureCreationYear = Number(
                                 cValue.match(/(?:\b|-?)\d+(?=,?|г?| +)/g)[0]
                             );
-                            maket[`DM${makets.length}${dNum}`] =
+                            maket[`DM${maketIndex}1`] =
                                 this.#formatValueByField(
                                     cultureCreationYear < 100
                                         ? 1900 + cultureCreationYear
                                         : cultureCreationYear,
-                                    `DM${makets.length}${dNum}`
+                                    `DM${maketIndex}1`
                                 );
-                            ++dNum;
+                        }
+                        let value11_2 = 0;
+                        if (cValue.indexOf('вспашка ') > -1) {
+                            value11_2 =
+                                cValue.indexOf('сплош') > -1
+                                    ? 70
+                                    : cValue.indexOf('полос') > -1
+                                    ? 71
+                                    : cValue.indexOf('борозд') > -1
+                                    ? 72
+                                    : cValue.indexOf('механизирован') > -1
+                                    ? 73
+                                    : cValue.indexOf('ручная') > -1
+                                    ? 74
+                                    : 0;
+                        }
+                        if (value11_2 > 0) {
+                            maket[`DM${maketIndex}2`] =
+                                this.#formatValueByField(
+                                    value11_2,
+                                    `DM${maketIndex}2`
+                                );
+                        }
+
+                        if (cValue.match(/посадка|посев/g)) {
+                            const value11_3 =
+                                cValue.indexOf('посадка мех') > -1
+                                    ? 1
+                                    : cValue.indexOf('посадка руч') > -1
+                                    ? 2
+                                    : cValue.indexOf('посев руч') > -1
+                                    ? 3
+                                    : 4;
+                            maket[`DM${maketIndex}3`] =
+                                this.#formatValueByField(
+                                    value11_3,
+                                    `DM${maketIndex}3`
+                                );
+                        }
+
+                        if (
+                            cValue.match(
+                                /(?<=рядами |ряду ) *\d+\.?\d+|\d+(?= +м)/g
+                            )
+                        ) {
+                            const value11_41 =
+                                cValue
+                                    .match(
+                                        /(?<=рядами |ряду ) *\d+\.?\d+|\d+(?= +м)/g
+                                    )?.[0]
+                                    ?.replace(',', '.') || 0;
+                            const value11_42 =
+                                cValue
+                                    .match(
+                                        /(?<=рядами |ряду ) *\d+\.?\d+|\d+(?= +м)/g
+                                    )?.[1]
+                                    ?.replace(',', '.') || 0;
+
+                            if (value11_41) {
+                                maket[`DM${maketIndex}4`] =
+                                    this.#formatValueByField(
+                                        value11_41,
+                                        `DM${maketIndex}4`
+                                    );
+                            }
+                            if (value11_42) {
+                                maket[`DM${maketIndex}5`] =
+                                    this.#formatValueByField(
+                                        value11_42,
+                                        `DM${maketIndex}5`
+                                    );
+                            }
                         }
                         if (
                             cValue.match(
-                                /(?<=состояние\s)погибшие(?=,| |\B)/g
-                            ) ||
-                            cValue.match(
-                                /(?<=состояние\s)удовлетворител(?=,| |\B)/g
-                            ) ||
-                            cValue.match(
-                                /(?<=состояние\s)недовлетворител(?=,| |\B)/g
+                                /(?<=количество ) *\d+\.?\d+|\d+(?= *тыс)/g
                             )
                         ) {
-                            maket[`DM${makets.length}${dNum}`] =
+                            const value11_51 = cValue
+                                .match(
+                                    /(?<=количество ) *\d+\.?\d+|\d+(?= *тыс)/g
+                                )?.[0]
+                                .replace(',', '.');
+                            if (value11_51) {
+                                maket[`DM${maketIndex}6`] =
+                                    this.#formatValueByField(
+                                        value11_51,
+                                        `DM${maketIndex}6`
+                                    );
+                            }
+                        }
+
+                        if (
+                            cValue.match(
+                                /(?<=состояние\s)удовлетворител|неудовлетворител|хорошее|погибшие(?=,| |\B)/g
+                            )
+                        ) {
+                            const value11_7 = cValue.match(
+                                /(?<=состояние\s)хорошее(?=,| |\B)/g
+                            )
+                                ? 4
+                                : cValue.match(
+                                      /(?<=состояние\s)удовлетворител(?=,| |\B)/g
+                                  )
+                                ? 3
+                                : cValue.match(
+                                      /(?<=состояние\s)неудовлетворител(?=,| |\B)/g
+                                  )
+                                ? 2
+                                : 1;
+
+                            maket[`DM${maketIndex}7`] =
                                 this.#formatValueByField(
-                                    cValue.match(
-                                        /(?<=состояние\s)Погибшие(?=,| |\B)/g
-                                    )
-                                        ? 1
-                                        : cValue.match(
-                                              /(?<=состояние\s)удовлетворител(?=,| |\B)/g
-                                          )
-                                        ? 2
-                                        : 3,
-                                    `DM${makets.length}${dNum}`
+                                    value11_7,
+                                    `DM${maketIndex}7`
                                 );
-                            ++dNum;
+
+                            if (value11_7 < 3) {
+                                maket[`DM${maketIndex}8`] =
+                                    this.#formatValueByField(
+                                        cValue.indexOf('наруш') > -1
+                                            ? 21
+                                            : cValue.indexOf('заниж') > -1
+                                            ? 22
+                                            : cValue.indexOf('несоот') > -1
+                                            ? 23
+                                            : cValue.indexOf('отсутств') > -1
+                                            ? 24
+                                            : cValue.indexOf('некач') > -1
+                                            ? 25
+                                            : cValue.indexOf('заглуш') > -1
+                                            ? 26
+                                            : cValue.indexOf('потрав') > -1
+                                            ? 27
+                                            : cValue.indexOf('повреж') > -1
+                                            ? 28
+                                            : cValue.indexOf('неблаг') > -1
+                                            ? 29
+                                            : 20,
+                                        `DM${maketIndex}8`
+                                    );
+                            }
                         }
 
                         break;
@@ -1345,6 +1886,64 @@ class ForestParser {
         return shortCategoryName;
     };
 
+    #getLandCodeByVMR = (compositions) => {
+        for (const composition of compositions) {
+            if (
+                composition['LN'] &&
+                !this.#checkForLandCategory(composition['LN']).hasMR
+            ) {
+                return composition['LCODE'];
+            }
+        }
+        // Если основная порода не найдена, то добавляем код по коренной
+        return compositions[0]['LCODE'];
+    };
+
+    #getMrOrVmrComposition = (compositions, mrType = 'VMR') => {
+        // Вначале ищем главную породу среди описания пород лесных земель
+        if (mrType == 'VMR') {
+            for (const composition of compositions) {
+                if (
+                    composition['CN'] &&
+                    composition['LN'] &&
+                    this.#checkForCompositition(composition['CN'])
+                        .isComposition &&
+                    !this.#checkForLandCategory(composition['LN']).hasMR
+                ) {
+                    return this.#checkForCompositition(composition['CN'], 0)
+                        .name;
+                }
+            }
+            // Если не находим главную породу в описании пород лесных земель берем ее из коренной породы
+            for (const composition of compositions) {
+                if (
+                    composition['LN'] &&
+                    composition['detailes'] &&
+                    this.#checkForLandCategory(composition['LN']).hasMR
+                ) {
+                    return composition['detailes'].length > 0
+                        ? composition['detailes'][0]['CN'] || ''
+                        : '';
+                }
+            }
+        } else {
+            for (const composition of compositions) {
+                if (
+                    composition['LN'] &&
+                    composition['detailes'] &&
+                    this.#checkForLandCategory(composition['LN']).hasMR
+                ) {
+                    return composition['detailes'].length > 0
+                        ? composition['detailes'][0]['CN']
+                        : '';
+                }
+            }
+        }
+
+        // Иначе возвращаем пустоту
+        return '';
+    };
+
     #getUsekNumberByComposition = (composition) => {
         const treeIndex = this.#mapFile['treeNew'].findIndex(
             (treeItem, index) => {
@@ -1490,11 +2089,11 @@ class ForestParser {
                 this.#currentLandName =
                 this.#currentLandCode =
                     null;
-            console.log(
-                `Нашли новый выдел ${this.#currentLot} в кварталк ${
-                    this.#currentKvartal
-                }`
-            );
+            // console.log(
+            //     `Нашли новый выдел ${this.#currentLot} в кварталк ${
+            //         this.#currentKvartal
+            //     }`
+            // );
         }
         // Проверяем на наличии дополнений для описания выдела при условии, что отсутствуют лесные культуры в колонке 3 таблицы (описание и состав)
         else if (
@@ -1572,9 +2171,13 @@ class ForestParser {
                             this.#getColumnHeaderValue(textContent, [4], '')
                         ) > 0
                     ) {
+                        // Если у нас уже есть описание пород и это новое описание или сли предыдущая категория земель содержит коренную породу начинаем новое описаие
                         if (
-                            lastComposition['CN'] &&
-                            lastComposition['CN'] !== compositionFullName
+                            (lastComposition['CN'] &&
+                                lastComposition['CN'] !==
+                                    compositionFullName) ||
+                            this.#checkForLandCategory(this.#currentLandName)
+                                .hasMR
                         ) {
                             compositions.push({});
                             lastComposition =
@@ -1702,15 +2305,17 @@ class ForestParser {
                             textContent,
                             ['2-22'],
                             ''
-                        )
-                            .trim()
-                            .trim();
+                        ).trim();
 
                         if (fullLandName.trim().indexOf('  ') > -1) {
                             landName = fullLandName.split('  ')[0].trim();
-                            landDetailes = fullLandName
-                                .slice(fullLandName.indexOf('  ') + 2)
-                                .trim();
+                            // landDetailes = fullLandName.slice(
+                            //     fullLandName.indexOf('  ') + 2
+                            // )
+                            //     ? fullLandName
+                            //           .slice(fullLandName.indexOf('  ') + 2)
+                            //           .trim()
+                            //     : '';
                         }
 
                         this.#currentLandType = landType;
@@ -1873,7 +2478,7 @@ class ForestParser {
                                 } = this.#checkForLotAdditional(
                                     additionItem.trim()
                                 );
-                                if (hasAdditional)
+                                if (hasAdditional && value)
                                     lotAdditions.push({ name, value });
                             });
                         } else lotAdditions.push({ name, value });
@@ -2085,6 +2690,7 @@ class ForestParser {
         return activitiValue;
     };
 
+    // Функция поиска категории защитных лесных земель
     #parseProtecteZoneOzu = (protectZoneOzu) => {
         let resultZoneOzuId = 7;
 
@@ -2265,20 +2871,20 @@ class ForestParser {
     // Проверяем наличие текущей категории земель
     #checkForLandCategory = (landCategory, logWarning = false) => {
         let hasAdditional = false;
-        landCategory = landCategory.trim();
-        landCategory = landCategory.trim();
+        landCategory = landCategory?.trim() || '';
 
         const result = {
-            landName: 'Естественное происхождение',
-            landType: 'лесные земли',
-            compositionType: composeType.culture,
-            landTier: 1,
-            landCode: 1101,
+            landName: landCategory,
+            landType: 'нелесные земли',
+            compositionType: composeType.object,
+            landTier: 0,
+            hasMR: false,
+            landCode: -1,
         };
 
         const { isComposition } = this.#checkForCompositition(landCategory);
 
-        if (!isComposition) {
+        if (!isComposition && landCategory) {
             // Проверяем код типа лесных земель из классификатора landType map файла
             const landTypeIndex = this.#mapFile['landType'].findIndex(
                 (landItem, index) => {
@@ -2321,10 +2927,6 @@ class ForestParser {
                                     isStringEqual(landCategory, landTypeItem) ==
                                         0
                                 ) {
-                                    // if (
-                                    //     (this.#currentKvartal == 1 && this.#currentLot == 1)
-                                    // )
-                                    //     console.log(landTypeItem, landCategory);
                                     //if (item.isPreview)
                                     result['landName'] = item.isPreview
                                         ? landCategory
@@ -2332,9 +2934,11 @@ class ForestParser {
                                     result['landType'] = item.type;
                                     result['landTier'] = item.tier;
                                     result['landCode'] = item.code;
-                                    if (result['landType'] == 'нелесные земли')
-                                        result['compositionType'] =
-                                            composeType.object;
+                                    result['hasMR'] = item.hasMR || false;
+                                    result['compositionType'] =
+                                        result['landType'] == 'нелесные земли'
+                                            ? composeType.object
+                                            : composeType.culture;
 
                                     return true;
                                 }
@@ -2380,6 +2984,13 @@ class ForestParser {
                 );
             }
         }
+        // if (this.#currentKvartal == 2 && this.#currentLot == 45)
+        //     console.log(
+        //         landCategory,
+        //         isComposition,
+        //         result,
+        //         'Проверка на текущую категорию'
+        //     );
 
         //if (landCategory.search('Прогал') > -1)
         //    console.log(landCategory, result['landCode']);
@@ -2590,7 +3201,7 @@ class ForestParser {
     #checkForCompositition = (composition = '', koeffIndex = 0) => {
         const composeMask = new RegExp(/[\d|\+|,]+[А-Я|-]+/g);
         // Если в элементе описания композиции обнаружены пробелы => удаляем их
-        composition = composition.replaceAll(' ', '');
+        composition = composition?.replaceAll(' ', '');
 
         let isComposition = false;
         let koeff = '';
