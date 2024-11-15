@@ -11,7 +11,7 @@ const getAllFilesFromFolder = (dirName, options = {}) => {
     const fs = require('fs');
     const path = require('path');
 
-    const { mask = '.docx|.doc|.pdf', isRecursion = false } = options;
+    const { mask = '.docx|.doc|.pdf|.txt', isRecursion = false } = options;
     let results = [];
 
     const listDirForFiles = (dName) => {

@@ -22,7 +22,7 @@ const { getAllFilesFromFolder } = require('../lib/helpers/helpers.cjs');
 const anyReader = require('../lib/reader/anytext.cjs').reader;
 
 const parserOptions = {
-    forestryMain: 'Кинешемское',
+    forestryMain: 'Ивановское',
     forestryDistrict: '',
     forestryTract: '',
     forestryRegion: 'Ивановская область',
