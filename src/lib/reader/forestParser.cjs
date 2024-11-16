@@ -119,6 +119,7 @@ const lotActivities = [
         hasRtk: true,
     },
     { mask: 'выбор.*санруб.*', code: 1605, hasValue: true, hasRtk: true },
+    { mask: 'руб.*ед.*дер.*', code: 1301, hasValue: false, hasRtk: false },
     {
         mask: 'ус.*мест.*отд.*',
         code: 2341,
@@ -518,7 +519,7 @@ const lotExtraLandType = [
         code: '1507',
     },
     {
-        value: 'Вырубка|постепенные рубки',
+        value: 'Вырубка|постепенные рубки|пройдено выборочной рубкой',
         short: 'Вырубка',
         type: 'лесные земли',
         isPreview: true,
@@ -596,7 +597,7 @@ const lotExtraLandType = [
         code: '2303',
     },
     {
-        value: 'Дорога лесная|Дорога',
+        value: 'Дорога лесная|Дороги лесные|Дороги|Дорога',
         short: 'Дорога лесная',
         type: 'нелесные земли',
         code: '2308',
@@ -3569,14 +3570,17 @@ class ForestParser {
                     value = textContent
                         .slice(textContent.indexOf('  ') + 2)
                         .trim();
-                } else {
+                } else if (
+                    isStringEqual(textContent.trim(), this.#currentLandName) !==
+                    0
+                ) {
                     isAdditional = true;
                     value = textContent.trim();
                 }
 
                 // if (
-                //     this.#currentKvartal == 41 &&
-                //     this.#currentLot == 16 //&&
+                //     this.#currentKvartal == 5 &&
+                //     this.#currentLot == 101 //&&
                 //     //landCategory.indexOf('Проч') > -1 &&
                 //     //landTypeItem.indexOf('Проч') > -1
                 // )
@@ -3585,6 +3589,7 @@ class ForestParser {
                 //         this.#currentLandName,
                 //         this.#currentLandCode,
                 //         this.#currentFeatureType,
+                //         isAdditional,
                 //         value,
                 //         'Текущая категория в дополнениях'
                 //     );
