@@ -21,8 +21,23 @@ const { getAllFilesFromFolder } = require('../lib/helpers/helpers.cjs');
 
 const anyReader = require('../lib/reader/anytext.cjs').reader;
 
+// const allForestrys = [
+//     'Вичугское',
+//     'Заволжское',
+//     'Ивановское',
+//     'Ильинское',
+//     'Кинешемское',
+//     'Пучежское',
+//     'Тейковское',
+//     'Фурмановское',
+//     'ШУЙСКОЕ',
+//     'ЮЖСКОЕ',
+// ];
+
+const allForestrys = ['Заволжское'];
+
 const parserOptions = {
-    forestryMain: 'Пучежское',
+    forestryMain: '',
     forestryDistrict: '',
     forestryTract: '',
     forestryRegion: 'Ивановская область',
@@ -32,7 +47,7 @@ const parserOptions = {
     taxerExpedition: 1,
     charset: '866',
     isParseHeader: true,
-    isParseTitul: false,
+    isParseTitul: true,
 };
 
 router.get('/parse', async (req, res) => {
@@ -158,24 +173,25 @@ router.get('/parse', async (req, res) => {
 
             // Запускаем процедуру парсинга таксационных описаний последовательно по всей папке
             if (!parserOptions.forestryFile) {
-                const fileList = getAllFilesFromFolder(
-                    path.resolve(
-                        __dirname,
-                        '../assets',
-                        parserOptions.forestryMain
-                    )
-                );
-
-                for (const fName of fileList) {
-                    parser.forestryFile = fName;
+                allForestrys.forEach(async (forestryMain) => {
+                    const fileList = getAllFilesFromFolder(
+                        path.resolve(__dirname, '../assets', forestryMain)
+                    );
+                    await parser.setForestryMain(forestryMain);
+                    for (const fName of fileList) {
+                        parser.forestryFile = fName;
+                        //parser.foresteryHeader = null;
+                        await parser.parseForestry();
+                        //break;
+                    }
+                });
+            } else {
+                allForestrys.forEach(async (forestryMain) => {
+                    await parser.setForestryMain(forestryMain);
+                    parser.forestryFile = parserOptions.forestryFile;
                     //parser.foresteryHeader = null;
                     await parser.parseForestry();
-                    //break;
-                }
-            } else {
-                parser.forestryFile = parserOptions.forestryFile;
-                //parser.foresteryHeader = null;
-                await parser.parseForestry();
+                });
             }
         });
 });

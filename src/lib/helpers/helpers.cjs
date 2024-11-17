@@ -2,9 +2,11 @@ const genUniqId = () => {
     return Date.now() + '-' + Math.floor(Math.random() * 1000000000);
 };
 
-const isStringEqual = (st1 = '', st2 = '') => {
+const isStringEqual = (st1 = '', st2 = '', useRegExp = false) => {
     if (!st1 || !st2) return -1;
-    return st1.toLowerCase().indexOf(st2.toLowerCase());
+    return useRegExp
+        ? st1.toLowerCase().search(st2.toLowerCase())
+        : st1.toLowerCase().indexOf(st2.toLowerCase());
 };
 
 const getAllFilesFromFolder = (dirName, options = {}) => {
