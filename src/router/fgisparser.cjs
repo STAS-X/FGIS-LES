@@ -34,7 +34,7 @@ const anyReader = require('../lib/reader/anytext.cjs').reader;
 //     'ЮЖСКОЕ',
 // ];
 
-const allForestrys = ['Заволжское'];
+const allForestrys = ['Южское'];
 
 const parserOptions = {
     forestryMain: '',
@@ -179,7 +179,7 @@ router.get('/parse', async (req, res) => {
                     );
                     await parser.setForestryMain(forestryMain);
                     for (const fName of fileList) {
-                        parser.forestryFile = fName;
+                        parser.setForestryFile(fName);
                         //parser.foresteryHeader = null;
                         await parser.parseForestry();
                         //break;
@@ -187,8 +187,8 @@ router.get('/parse', async (req, res) => {
                 });
             } else {
                 allForestrys.forEach(async (forestryMain) => {
+                    //parser.setForestryFile(parserOptions.forestryFile);
                     await parser.setForestryMain(forestryMain);
-                    parser.forestryFile = parserOptions.forestryFile;
                     //parser.foresteryHeader = null;
                     await parser.parseForestry();
                 });
