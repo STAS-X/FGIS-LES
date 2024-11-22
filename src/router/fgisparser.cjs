@@ -34,7 +34,7 @@ const anyReader = require('../lib/reader/anytext.cjs').reader;
 //     'ЮЖСКОЕ',
 // ];
 
-const allForestrys = ['Южское'];
+const allForestrys = ['Тейковское'];
 
 const parserOptions = {
     forestryMain: '',
@@ -173,9 +173,9 @@ router.get('/parse', async (req, res) => {
 
             // Запускаем процедуру парсинга таксационных описаний последовательно по всей папке
             if (!parserOptions.forestryFile) {
-                allForestrys.forEach(async (forestryMain) => {
+                for (const forestryMain of allForestrys) {
                     const fileList = getAllFilesFromFolder(
-                        path.resolve(__dirname, '../assets', forestryMain)
+                        path.resolve(__dirname, '../assets/', forestryMain)
                     );
                     await parser.setForestryMain(forestryMain);
                     for (const fName of fileList) {
@@ -184,14 +184,14 @@ router.get('/parse', async (req, res) => {
                         await parser.parseForestry();
                         //break;
                     }
-                });
+                }
             } else {
-                allForestrys.forEach(async (forestryMain) => {
+                for (const forestryMain of allForestrys) {
                     //parser.setForestryFile(parserOptions.forestryFile);
                     await parser.setForestryMain(forestryMain);
                     //parser.foresteryHeader = null;
                     await parser.parseForestry();
-                });
+                }
             }
         });
 });
