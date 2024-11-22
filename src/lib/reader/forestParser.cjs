@@ -1392,8 +1392,7 @@ class ForestParser {
             }
             // Далее переходим к наполнению колонок по каждой породе сквозной нумерацией, начиная с 1
             if (compositionNum < 11 && composition['detailes']) {
-                let newARD = 0;
-                let newAMZ = 0;
+                let newTier = 0;
                 let newKoeff = 0;
                 let detailNum = 1;
                 for (const detail of composition['detailes']) {
@@ -1408,12 +1407,23 @@ class ForestParser {
                                   detailNum - 1
                               ).koeff;
 
-                    if (detail['CT'] > 0)
-                        compositionResult[`ARD${compositionNum}`] =
-                            this.#formatValueByField(
-                                detail['CT'],
-                                `ARD${compositionNum}`
-                            );
+                    // Поучаем новое значение яруса для породы следующим образом: смотрим на значение в колонке, далее смотрим на значение яруса для первой породы,
+                    // далее смотрим на значение яруса для категории земель и далее берем значени по умолчанию - 1
+                    newTier =
+                        (Number(detail['CT']) > 0 && Number(detail['CT'])) ||
+                        (Number(composition['detailes'][0]) > 0 &&
+                            Number(composition['detailes'][0])) ||
+                        (this.#checkForLandCategory(composition['LN'])
+                            .landTier > 0 &&
+                            this.#checkForLandCategory(composition['LN'])
+                                .landTier) ||
+                        1;
+
+                    compositionResult[`ARD${compositionNum}`] =
+                        this.#formatValueByField(
+                            newTier,
+                            `ARD${compositionNum}`
+                        );
 
                     if (newKoeff > 0)
                         compositionResult[`KF${compositionNum}`] =
@@ -1496,7 +1506,7 @@ class ForestParser {
                 let maket = [];
                 //console.log(addition);
                 // Проходимся по всем дополнениям и пытаемся записать сведения в соответствующие колонки БД
-                switch (addition.name) {
+                switch (addition.name.toLowerCase()) {
                     case 'подлесок':
                         cValue = addition.value.toLowerCase();
                         additionResult['STG32'] =
@@ -1866,7 +1876,7 @@ class ForestParser {
                         }
 
                         break;
-                    case 'Класс пожарной опасности':
+                    case 'класс пожарной опасности':
                         // Дополнение в макет Особенности - 23
                         maket = makets.find((maketItem, index) => {
                             maketIndex = index + 1;
@@ -1888,7 +1898,6 @@ class ForestParser {
 
                         break;
                     case 'повреждение':
-                    case 'повреждения насаждения':
                         // Макет Вредители - 12
                         makets.push({});
                         maket = makets[makets.length - 1];
@@ -2228,7 +2237,6 @@ class ForestParser {
                         (admCode == 0 || districtItem[6] == admCode)
                     );
                 });
-
                 // console.log(
                 //     isStringEqual('Шуйское', this.#forestryMain),
                 //     !this.#forestryDistrict,
