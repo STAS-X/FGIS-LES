@@ -128,6 +128,12 @@ const lotActivities = [
         hasRtk: true,
     },
     {
+        mask: 'обновит.*руб.*',
+        code: 1269,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
         mask: 'выб.*санруб.*|выб.*руб.*',
         code: 1605,
         hasValue: true,
@@ -154,9 +160,15 @@ const lotActivities = [
         hasRtk: true,
     },
     {
-        mask: 'прочист.*оч.*|прочистк.*',
+        mask: 'проч.*оч.*|прочистк.*',
         code: 1420,
         isCodeModify: true,
+        hasValue: true,
+        hasRtk: true,
+    },
+    {
+        mask: 'рубка.*перефор.*',
+        code: 1445,
         hasValue: true,
         hasRtk: true,
     },
@@ -337,7 +349,7 @@ const lotAdditionalActivities = [
 
 const lotExtraProtectZone = [
     {
-        name: 'Зеленые зоны|зелёные зоны|Лес.*распол.*зелен.*зонах|ЛЕСОХОЗЯЙСТВ.ЧАСТЬ ЗЕЛЕНЫХ ЗОН',
+        name: 'Зеленые зоны|зелёные зоны|Лесопарк.*част.*зелен.*зон|Лес.*распол.*зелен.*зонах|ЛЕСОХОЗЯЙСТ.*ЧАСТ.*ЗЕЛЕНЫХ.*ЗОН',
         code: 131802,
     },
     {
@@ -354,6 +366,11 @@ const lotExtraProtectZone = [
         name: 'ЗАПР.ПОЛ.ЛЕС.ВДОЛЬ ВОД.ОБЪЕКТ.|Запр.*пол.*лес.*вдоль.*вод.*|Запр.*пол.*вдол.*вод.*об.*',
         code: 110100,
     },
+    {
+        name: 'ЗАПРЕТ.*ПОЛОС.*ВДОЛЬ.*НЕРЕСТ.*РЕК.*',
+        code: 110200,
+    },
+
     {
         name: 'ЛЕСА,РАСПОЛ.В ЗАЩ.ПОЛОС.ЛЕСОВ|Лес.*располож.*защит.*полос.*|Защитные полосы вдоль дорог|ЗАЩИТ.ПОЛОСЫ ВДОЛЬ ДОРОГ|Защит.*придорож.*полос.*лес',
         code: 120800,
@@ -480,7 +497,7 @@ const lotExtraLandType = [
         code: '2303',
     },
     {
-        value: 'Дорога автомоб.*иск.*покр.*',
+        value: 'Дорога автомоб.*иск.*покр.*|Автом.*иск.*покр.*',
         short: 'Дорога автом. иск.пок.',
         type: 'нелесные земли',
         isPreview: true,
@@ -517,6 +534,11 @@ const lotExtraLandType = [
         value: 'Плантация|Питомник',
         type: 'лесные земли',
         code: '1341',
+    },
+    {
+        value: 'Дендропарк',
+        type: 'лесные земли',
+        code: '1343',
     },
     {
         value: 'Культ.*лесн.|лесные.*культ.|Насажден.*с.*лес.*культ.|Нас.*ест.*с.*прим.*л.?к',
@@ -1739,7 +1761,7 @@ class ForestParser {
                         //         'MR'
                         //     );
                         break;
-                    case 'ОЗУ':
+                    case 'озу':
                         // Парсим ОЗУ-шки
                         cValue = addition.value;
                         additionResult['SKP'] = this.#formatValueByField(
@@ -2200,13 +2222,16 @@ class ForestParser {
     // Функци считывает из классификатора (map)коды лесничества, уч. лесничества, урочища, района и т.п.
     #parseForestryCodesAndContent = async () => {
         try {
-            const tractCode = path.parse(this.#forestryFile).name.indexOf('-')
-                ? !isNaN(path.parse(this.#forestryFile).name.split('-')[0])
-                    ? Number(path.parse(this.#forestryFile).name.split('-')[0])
-                    : 0
-                : !isNaN(path.parse(this.#forestryFile).name)
-                ? Number(path.parse(this.#forestryFile).name)
-                : 0;
+            const tractCode =
+                path.parse(this.#forestryFile).name.indexOf('-') > -1
+                    ? !isNaN(path.parse(this.#forestryFile).name.split('-')[0])
+                        ? Number(
+                              path.parse(this.#forestryFile).name.split('-')[0]
+                          )
+                        : 0
+                    : !isNaN(path.parse(this.#forestryFile).name)
+                    ? Number(path.parse(this.#forestryFile).name)
+                    : 0;
 
             const admCode = 0;
             // path.parse(this.#forestryFile).name.indexOf('-') &&
@@ -2238,12 +2263,11 @@ class ForestParser {
                     );
                 });
                 // console.log(
-                //     isStringEqual('Шуйское', this.#forestryMain),
-                //     !this.#forestryDistrict,
-                //     !this.#forestryTract,
+                //     this.#forestryDistrict,
+                //     this.#forestryTract,
                 //     this.#forestryMain,
                 //     this.#forestryRegion,
-                //     this.#forestryDistrict,
+
                 //     tractCode,
                 //     admCode,
                 //     forestryIndex
@@ -3476,7 +3500,8 @@ class ForestParser {
                 );
             }
         }
-        //console.log(this.#currentKvartal, protectZoneOzu, zoneOzuIndex);
+        // if (this.#currentKvartal == 154)
+        //     console.log(this.#currentKvartal, protectZoneOzu, zoneOzuIndex);
         return resultZoneOzuId;
     };
 

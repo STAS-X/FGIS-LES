@@ -34,13 +34,13 @@ const anyReader = require('../lib/reader/anytext.cjs').reader;
 //     'ЮЖСКОЕ',
 // ];
 
-const allForestrys = ['Вичугское', 'Ильинское', 'Тейковское', 'Фурмановское'];
+const allForestrys = ['Антроповское'];
 
 const parserOptions = {
     forestryMain: '',
     forestryDistrict: '',
     forestryTract: '',
-    forestryRegion: 'Ивановская область',
+    forestryRegion: 'Костромская область',
     forestryFile: '',
     coordSystem: 'msk37Zona1',
     taxerCompany: 'ООО «Лесопроектное бюро»',
