@@ -1180,10 +1180,9 @@ class ForestParser {
                                 .toString()
                                 .slice(0, 2)
                         ),
-                        PL: Number(
-                            Number(
-                                currentLot['kvArea'].replace(',', '.')
-                            ).toFixed(1)
+                        PL: this.#formatValueByField(
+                            currentLot['kvArea'],
+                            'PL'
                         ),
 
                         SKNR: Number(lot),
@@ -2589,18 +2588,16 @@ class ForestParser {
             // Чтобы отделить номер выдела от статистики по площади квартала считываем первые две колонки и ищем обязательный пробел между номером и площадью выдела,
             // если находим, то это именно номер выдела, а не общая площадь по кварталу
         } else if (
-            Number(this.#getColumnHeaderValue(textContent, [0], '')) > 0 &&
-            this.#getColumnHeaderValue(textContent, ['0-1'], '')
-                .trim()
-                .indexOf(' ') > -1 &&
-            this.#currentKvartal
+            this.#checkForNewLotArea(
+                this.#getColumnHeaderValue(textContent, ['0-1'], '')
+            ).isNewLot
         ) {
             // Если нашли начало нового выдела присваиваем необходимые сущности
             this.#currentStep = searchStep.stepFeature;
             this.#currentFeatureType = featureType.main;
-            this.#currentLot = Number(
-                this.#getColumnHeaderValue(textContent, [0], '')
-            );
+            this.#currentLot = this.#checkForNewLotArea(
+                this.#getColumnHeaderValue(textContent, ['0-1'], '')
+            ).lotId;
             this.#countLots++;
             this.#countLotsByKvartal++;
             this.#forestryResult[this.#currentKvartal].lots[this.#currentLot] =
@@ -2608,7 +2605,9 @@ class ForestParser {
                     compositions: [],
                     additions: [],
                     // Площадь выдела
-                    kvArea: this.#getColumnHeaderValue(textContent, [1], ''),
+                    kvArea: this.#checkForNewLotArea(
+                        this.#getColumnHeaderValue(textContent, ['0-1'], '')
+                    ).lotArea,
                     // Записываем код категории защитности леса
                     FP_CODE: this.#checkForProtectedForest(
                         this.#currentProtectZone
@@ -3520,19 +3519,19 @@ class ForestParser {
             let start = 0;
             let end = 0;
 
-            if (textContent.indexOf(splitSymbol) == 0) {
-                textContent = textContent.slice(1);
-                end = 1;
-            }
+            if (textContent.indexOf(splitSymbol) == 0)
+                textContent = ` ${textContent.slice(1)}`;
+            //end = 1;
+            //}
 
             if (Number(textContent.split(splitSymbol)[0]) > 0) {
                 this.#tableHeaders = textContent
                     .split(splitSymbol)
                     .map((item) => {
-                        end += item.length - (start == 0 ? 1 : 0);
+                        end += item.length;
                         const diapazon = { start, end };
-                        start = end + 1;
-                        end = start;
+                        start = end;
+                        end = start + 1;
                         return diapazon;
                     });
                 // Исправляем ширину последней колонки до 120 символов при необходимости
@@ -3579,6 +3578,26 @@ class ForestParser {
         );
     };
 
+    // Добавляем проверку на наличие нового выдела и его площади (пытаемся распарсить первые 2-е колонки вне их диапазонов)
+    #checkForNewLotArea = (lotUniqueData = '') => {
+        lotUniqueData = lotUniqueData.replaceAll(',', '.').trim();
+
+        let parseData = lotUniqueData
+            .slice(0, lotUniqueData.indexOf(' '))
+            .trim();
+
+        const lotId = (parseData && Number(parseData)) || 0;
+
+        parseData = lotUniqueData.slice(lotUniqueData.indexOf(' ')).trim();
+        const lotArea =
+            parseData && Number(parseData) > 0 ? Number(parseData) : 0.1 || 0;
+
+        return {
+            lotId,
+            lotArea,
+            isNewLot: lotId > 0 && lotArea > 0 && this.#currentKvartal,
+        };
+    };
     // Если мы нашли дополнение с :, то пытаемся его представить в комплексном виде и распарсить на составляющие
     #extractFromComplexAdditional = (complexAdditional) => {
         let resultAdditionals = [];
@@ -4465,7 +4484,7 @@ class ForestParser {
                                   .trim()
                             : textItem.slice(
                                   this.#tableHeaders[index].start,
-                                  this.#tableHeaders[index].end + 1
+                                  this.#tableHeaders[index].end
                               )
                         ).trim() +
                         splitSymbol
