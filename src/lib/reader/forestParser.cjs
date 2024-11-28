@@ -112,12 +112,12 @@ const lotAdditionalData = [
     { value: 'ОЗУ ', isElement: true },
     { value: 'ООПТ ', isElement: true },
     {
-        value: 'СОСТАВ |ПОЛНОТА |ТЛУ ВАРЬИРУЕТ|ТИП ЛЕСА |НАСАЖДЕНИЕ |НА ПЛОЩАДИ |РАЗМЕЩЕНИЕ |ВЫСОТА |ДИАМЕТР |ТИП ЛЕСА |ПЛОЩАДЬ |БОНИТЕТ |РЕКОМЕНД.|УЧ-КИ ЛЕСА ВОКР НАСЕЛ.|УЧ.ЛЕСА ВОКР.|ЧАСТИЧНО |РЕКОМ.К|РЕКОМЕНДАЦИИ|ПРОВЕДЕНО СОД|ПЛС.ВДОЛЬ |ПОЛОСЫ ВДОЛЬ РЕК|В ВЫДЕЛЕ |ЗАГРЯЗНЕНИЕ БЫТОВЫМИ ',
+        value: 'СОСТАВ |ПОЛНОТА |ТЛУ ВАРЬИРУЕТ|ТИП ЛЕСА |ТРЕБУЕТСЯ ПРОВЕДЕНИЕ |НАСАЖДЕНИЕ |НА ПЛОЩАДИ |РАЗМЕЩЕНИЕ |ВЫСОТА |ДИАМЕТР |ТИП ЛЕСА |ПЛОЩАДЬ |БОНИТЕТ |РЕКОМЕНД.|УЧ-КИ ЛЕСА ВОКРУГ |УЧ-КИ ЛЕСА ДО |УЧ-КИ ЛЕСА ВОКР НАСЕЛ.|УЧ.ЛЕСА ВОКР.|ЧАСТИЧНО |РЕКОМ.К|РЕКОМЕНДАЦИИ|ПРОВЕДЕНО СОД|ПЛС.ВДОЛЬ |ПОЛОСЫ ВДОЛЬ РЕК|В ВЫДЕЛЕ |ЗАГРЯЗНЕНИЕ БЫТОВЫМИ ',
         name: 'особенности ',
         isElement: false,
     },
     { value: 'НЕ ПЛОД', name: 'сады ', isElement: false },
-    { value: 'ЛЕСОХОЗЯЙСТВЕHHАЯ', name: 'хар-ка ', isElement: false },
+    { value: 'ЛЕСОХОЗЯЙСТВЕННАЯ', name: 'хар-ка ', isElement: false },
 ];
 
 const lotActivities = [
@@ -541,7 +541,7 @@ const lotExtraLandType = [
         code: '1343',
     },
     {
-        value: 'Культ.*лесн.|лесные.*культ.|Насажден.*с.*лес.*культ.|Нас.*ест.*с.*прим.*л.?к',
+        value: 'Культ.*лесн.|лесные.*культ.|Насажден.*с.*лес.*культ.|Нас.*ест.*с.*прим.*л.?к|Насажд.*с.*прим.*л.?к|Насажд.*с',
         short: 'Культуры лесные',
         type: 'лесные земли',
         tier: 5,
@@ -809,7 +809,7 @@ const lotExtraLandType = [
     },
     // Добавляем промежуточное описание культур для интерпретации первичных названий лесных земель, с целью дальнейшего уточнения
     {
-        value: 'Насажд.*',
+        value: 'Насаждение$',
         type: 'лесные земли',
         isPreview: true,
         code: '1101',
@@ -1533,12 +1533,15 @@ class ForestParser {
                         additionResult['STG32'] =
                             cValue.toLowerCase().search('редкий') > -1
                                 ? 1
-                                : cValue.toLowerCase().search('ср.') > -1
+                                : cValue
+                                      .toLowerCase()
+                                      .search('ср\\.|сред|густ') > -1
                                 ? 2
                                 : 3;
                         if (
-                            cValue.toLowerCase().search('редкий|ср.|густой') ==
-                            0
+                            cValue
+                                .toLowerCase()
+                                .search('редкий|ср\\.|густой') == 0
                         ) {
                             // Если попадаем на вариант Шуйского от "интересных подрядчиков"
                             while (cValue.indexOf('  ') > -1)
@@ -1597,34 +1600,24 @@ class ForestParser {
                                     candidateToCompose = composeItem;
                                     isComposite = true;
                                 }
-                                // if (
-                                //     this.#currentKvartal == 1 &&
-                                //     this.#currentLot > 5 &&
-                                //     this.#currentLot < 14
-                                // )
-                                //     console.log(
-                                //         this.#currentLot,
-                                //         isComposite,
-                                //         composeName.length - 1,
-                                //         composeCode,
-                                //         singleCode,
-                                //         composeIndex,
-                                //         composeItem,
-                                //         candidateToCompose,
-                                //         this.#getComposeCodeByName(
-                                //             `${candidateToCompose}`
-                                //         ),
-                                //         additionResult,
-                                //         'Макет подлеска для текущего выдела'
-                                //     );
                             });
                         } else {
                             cPart = addition.value.match(
-                                /(?<=\B| |,|\+)[А-Я]{1,4}(?= |,|\+)/g
+                                /(?<=^| |,|\+)[А-Я]{1,4}(?= |,|\+)/g
                             );
                             if (cPart)
                                 cPart.forEach((part, index) => {
                                     additionResult[`MR${index + 1}32`] = part;
+                                    // if (
+                                    //     this.#currentKvartal == 4 &&
+                                    //     this.#currentLot == 32
+                                    // )
+                                    //     console.log(
+                                    //         this.#currentLot,
+                                    //         addition.value,
+                                    //         part,
+                                    //         'Макет подлеска для текущего выдела'
+                                    //     );
                                 });
                         }
 
@@ -3582,15 +3575,20 @@ class ForestParser {
     #checkForNewLotArea = (lotUniqueData = '') => {
         lotUniqueData = lotUniqueData.replaceAll(',', '.').trim();
 
-        let parseData = lotUniqueData
-            .slice(0, lotUniqueData.indexOf(' '))
-            .trim();
+        let parseData =
+            lotUniqueData.indexOf(' ') > -1 &&
+            lotUniqueData.slice(0, lotUniqueData.indexOf(' ')).trim();
 
-        const lotId = (parseData && Number(parseData)) || 0;
+        const lotId = parseData && (Number(parseData) || 0);
 
-        parseData = lotUniqueData.slice(lotUniqueData.indexOf(' ')).trim();
+        parseData =
+            lotUniqueData.indexOf(' ') > -1 &&
+            lotUniqueData.slice(lotUniqueData.indexOf(' ')).trim();
         const lotArea =
-            parseData && Number(parseData) > 0 ? Number(parseData) : 0.1 || 0;
+            parseData &&
+            (Number(parseData) > 0 && Number(Number(parseData).toFixed(1)) > 0
+                ? Number(parseData)
+                : 0.1 || 0);
 
         return {
             lotId,
@@ -3868,8 +3866,8 @@ class ForestParser {
                             if (
                                 isStringEqual(textContent, lotPart.trim()) == 0
                             ) {
-                                // Проверяем на наличие дополнения и отсутствии его среди наименования культур (чтобы случайно вместо дополнения не захватить культуру)
                                 if (lotValue.isElement) {
+                                    // Проверяем на наличие дополнения и отсутствии его среди наименования культур (чтобы случайно вместо дополнения не захватить культуру)
                                     name = lotPart.trim();
                                     value = textContent
                                         .slice(lotPart.length)
@@ -3936,7 +3934,6 @@ class ForestParser {
                 name = textContent.split(':')[0].trim();
                 value = textContent.split(':').slice(1).join('').trim();
             }
-
             // На последнем этапе проверки дополнения, если мы не находим характерных дополнений, хоз-мероприятий,
             // у нас нет активных дополнений и текущий кандидат не является категорией леса, то добавляем его в качестве нечеткого описания
             if (
