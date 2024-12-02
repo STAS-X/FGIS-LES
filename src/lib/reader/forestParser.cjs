@@ -1432,13 +1432,12 @@ class ForestParser {
                     // далее смотрим на значение яруса для категории земель и далее берем значени по умолчанию - 1
                     newTier =
                         (Number(detail['CT']) > 0 && Number(detail['CT'])) ||
-                        (Number(composition['detailes'][0]) > 0 &&
-                            Number(composition['detailes'][0])) ||
+                        (newTier > 0 && newTier) ||
                         (this.#checkForLandCategory(composition['LN'])
                             .landTier > 0 &&
                             this.#checkForLandCategory(composition['LN'])
                                 .landTier) ||
-                        1;
+                        5;
 
                     compositionResult[`ARD${compositionNum}`] =
                         this.#formatValueByField(
@@ -1533,15 +1532,13 @@ class ForestParser {
                         additionResult['STG32'] =
                             cValue.toLowerCase().search('редкий') > -1
                                 ? 1
-                                : cValue
-                                      .toLowerCase()
-                                      .search('ср\\.|сред|густ') > -1
+                                : cValue.toLowerCase().search('ср\\.|сред') > -1
                                 ? 2
                                 : 3;
                         if (
                             cValue
                                 .toLowerCase()
-                                .search('редкий|ср\\.|густой') == 0
+                                .search('редкий|ср\\.|сред|густой') == 0
                         ) {
                             // Если попадаем на вариант Шуйского от "интересных подрядчиков"
                             while (cValue.indexOf('  ') > -1)
