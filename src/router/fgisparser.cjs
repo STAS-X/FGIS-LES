@@ -34,7 +34,7 @@ const anyReader = require('../lib/reader/anytext.cjs').reader;
 //     'ЮЖСКОЕ',
 // ];
 
-const allForestrys = ['Пучежское'];
+const allForestrys = ['Ивановское'];
 
 const parserOptions = {
     forestryMain: '',
